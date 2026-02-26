@@ -9,11 +9,12 @@
  *     and set it on the Django admin photo <input type="file"> field.
  *  3. Show a thumbnail preview of the captured image.
  *  4. After capture, run face-api.js (if loaded) to extract a 128-d embedding
- *     and POST it together with the photo to /faces/<pk>/enroll/.
+ *     and store it in the hidden "face_embedding_json" field so it is submitted
+ *     together with the admin form save (works for both new and existing records).
  *
  * The script is loaded via the FaceAdmin change_form_template and expects:
  *   - A file input with id="id_photo"
- *   - window.FACE_ENROLL_URL set by the change_form template
+ *   - A hidden input with id="id_face_embedding_json"
  *   - window.FACE_API_MODELS_URL set by the change_form template (optional)
  */
 
@@ -21,13 +22,6 @@
   "use strict";
 
   // ── helpers ──────────────────────────────────────────────────────────────
-
-  function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(";").shift();
-    return null;
-  }
 
   function dataURLtoBlob(dataURL) {
     const [header, data] = dataURL.split(",");
@@ -280,14 +274,7 @@
 
       closeModal();
 
-      // ── Optional: extract embedding via face-api.js and POST to enroll ──
-      const enrollUrl = window.FACE_ENROLL_URL;
-      if (!enrollUrl) {
-        statusLine.textContent =
-          "📸 Photo set. Save the form to persist. (New record — enroll after first save.)";
-        return;
-      }
-
+      // ── Extract embedding via face-api.js and store in hidden field ───────
       statusLine.textContent = "⏳ Detecting face and extracting embedding…";
 
       const result = await extractEmbedding(capturedDataURL);
@@ -321,35 +308,15 @@
         return;
       }
 
-      // We have a valid embedding — POST photo + embedding to the enroll endpoint
+      // We have a valid embedding — store it in the hidden field so it is
+      // submitted together with the admin form save.
       const embedding = result.embedding; // Float32Array(128)
-      statusLine.textContent = "⏳ Saving photo and embedding…";
-
-      try {
-        const formData = new FormData();
-        formData.append("photo", file);
-        formData.append("embedding", JSON.stringify(Array.from(embedding)));
-
-        const resp = await fetch(enrollUrl, {
-          method: "POST",
-          headers: { "X-CSRFToken": getCookie("csrftoken") },
-          body: formData,
-        });
-
-        if (resp.ok) {
-          const data = await resp.json();
-          statusLine.textContent =
-            "✅ Embedding saved! (" + (data.embedding_length || 128) + "-d vector). Reloading…";
-          // Reload the page so the admin reflects the saved embedding
-          setTimeout(() => location.reload(), 1200);
-        } else {
-          const err = await resp.json().catch(() => ({}));
-          statusLine.textContent =
-            "❌ Enroll failed: " + (err.error || resp.statusText);
-        }
-      } catch (e) {
-        statusLine.textContent = "❌ Network error: " + e.message;
+      const hiddenField = document.getElementById("id_face_embedding_json");
+      if (hiddenField) {
+        hiddenField.value = JSON.stringify(Array.from(embedding));
       }
+      statusLine.textContent =
+        "✅ Face detected! Embedding ready (" + embedding.length + "-d vector). Save the form to enroll.";
     }
 
     // ── event wiring ──────────────────────────────────────────────────────

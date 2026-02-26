@@ -1,3 +1,6 @@
+import json
+
+import numpy as np
 from django.contrib import admin
 
 from .models import Face, FaceGroup
@@ -28,7 +31,7 @@ class FaceAdmin(admin.ModelAdmin):
     search_fields = ("name", "custom_id", "remarks")
 
     # Exclude the binary embedding field from the admin form — it is managed
-    # exclusively via the /faces/<pk>/enroll/ endpoint (webcam capture widget).
+    # via the webcam capture widget (stored in the hidden face_embedding_json field).
     exclude = ("embedding",)
 
     # Show embedding status and timestamps as read-only info in the change form
@@ -60,19 +63,36 @@ class FaceAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         """
-        Preserve the existing embedding when saving via the admin form.
+        Persist the face embedding submitted via the hidden ``face_embedding_json``
+        form field (populated by the webcam capture widget).
 
-        The embedding is written exclusively by the /faces/<pk>/enroll/
-        endpoint.  A normal admin save must never overwrite it with None,
-        which would happen if we called obj.save() on a freshly-bound form
-        instance that never had the embedding loaded.
+        If the webcam widget extracted an embedding it stores it as a JSON array
+        in that hidden field.  We read it here and attach it to the object before
+        saving, for both new and existing records.
+
+        If no new embedding was submitted for an existing record, we re-fetch the
+        current embedding from the DB so it is not silently overwritten with None
+        by the admin form (which has no embedding widget).
         """
-        if change and obj.pk:
-            # Re-fetch the current embedding from the DB so it is not lost
-            # when the admin form (which has no embedding widget) is saved.
+        embedding_json = request.POST.get("face_embedding_json", "").strip()
+
+        if embedding_json:
+            # Webcam widget provided a fresh embedding — use it.
+            try:
+                embedding_list = json.loads(embedding_json)
+                if isinstance(embedding_list, list) and len(embedding_list) == 128:
+                    obj.embedding = np.array(
+                        embedding_list, dtype=np.float32
+                    ).tobytes()
+            except (json.JSONDecodeError, ValueError, TypeError):
+                pass  # malformed data — fall through to DB-preservation logic below
+
+        if not obj.embedding and change and obj.pk:
+            # No new embedding submitted — preserve whatever is already in the DB.
             try:
                 current = Face.objects.only("embedding").get(pk=obj.pk)
                 obj.embedding = current.embedding
             except Face.DoesNotExist:
                 pass
+
         super().save_model(request, obj, form, change)
