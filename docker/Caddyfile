@@ -1,0 +1,21 @@
+# Caddyfile for Face Check-in
+# Replace {$DOMAIN} with your actual domain, or use a local IP for LAN deployments.
+# Caddy handles automatic HTTPS (required for camera access on kiosk devices).
+
+{$DOMAIN:localhost} {
+    # Reverse proxy to Django/gunicorn
+    reverse_proxy django_sqlite:8000 django_postgres:8000 {
+        # Caddy will try each upstream in order; only one will be running
+        lb_policy first
+        fail_duration 5s
+    }
+
+    # Serve static files directly from the container's staticfiles directory
+    # (WhiteNoise handles this at the Django level, so this is optional)
+    encode gzip
+
+    log {
+        output stdout
+        format console
+    }
+}

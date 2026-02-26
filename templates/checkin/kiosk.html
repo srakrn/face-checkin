@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Check-in — {{ session.name }}{% endblock %}
+
+{% block extra_head %}
+  {# face-api.js — model files must be placed in static/js/face-api/models/ #}
+  <script src="{% static 'js/face-api/face-api.min.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div
+  x-data="kioskApp('{% url 'checkin_api:match' %}', '{% static 'js/face-api/models' %}', {{ session.id }})"
+  class="kiosk-container"
+>
+  <h1>{{ session.name }}</h1>
+
+  {% if not session_active %}
+    <p class="status-message">This session is not currently active.</p>
+  {% else %}
+    {# Camera preview #}
+    <video x-ref="video" autoplay playsinline muted></video>
+    <canvas x-ref="canvas" style="display:none;"></canvas>
+
+    {# Status message area #}
+    <div x-show="message" x-text="message" :class="messageClass"></div>
+
+    {# Take Photo button #}
+    <button
+      @click="takePhoto"
+      :disabled="processing"
+      x-text="processing ? 'Processing…' : 'Take Photo'"
+    ></button>
+  {% endif %}
+</div>
+
+<script>
+function kioskApp(matchUrl, modelPath, sessionId) {
+  return {
+    processing: false,
+    message: '',
+    messageClass: '',
+
+    async init() {
+      // Load face-api.js models
+      await faceapi.nets.ssdMobilenetv1.loadFromUri(modelPath);
+      await faceapi.nets.faceLandmark68Net.loadFromUri(modelPath);
+      await faceapi.nets.faceRecognitionNet.loadFromUri(modelPath);
+
+      // Start camera
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' },
+        });
+        this.$refs.video.srcObject = stream;
+      } catch (err) {
+        this.showMessage('Camera access denied: ' + err.message, 'error');
+      }
+    },
+
+    async takePhoto() {
+      this.processing = true;
+      this.message = '';
+
+      const video = this.$refs.video;
+      const canvas = this.$refs.canvas;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+
+      // Detect face and extract embedding
+      const detection = await faceapi
+        .detectSingleFace(canvas)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (!detection) {
+        this.showMessage('No face detected. Please try again.', 'warning');
+        this.processing = false;
+        return;
+      }
+
+      const embedding = Array.from(detection.descriptor);
+
+      // Convert canvas to blob
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+
+      // Build form data
+      const formData = new FormData();
+      formData.append('session_id', sessionId);
+      formData.append('embedding', JSON.stringify(embedding));
+      formData.append('face_image', blob, 'face.jpg');
+
+      // Send to server
+      try {
+        const resp = await fetch(matchUrl, { method: 'POST', body: formData });
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          this.showMessage(data.error || 'Server error.', 'error');
+        } else if (data.matched) {
+          if (data.already_checked_in) {
+            this.showMessage(`Welcome back, ${data.face.name}! You have already checked in.`, 'warning');
+          } else {
+            this.showMessage(`Welcome, ${data.face.name}! Check-in successful.`, 'success');
+          }
+        } else {
+          this.showMessage('Face not recognised. Please try again or contact staff.', 'error');
+        }
+      } catch (err) {
+        this.showMessage('Network error: ' + err.message, 'error');
+      }
+
+      this.processing = false;
+
+      // Auto-clear message after 4 seconds
+      setTimeout(() => { this.message = ''; }, 4000);
+    },
+
+    showMessage(text, type) {
+      this.message = text;
+      this.messageClass = 'message-' + type;
+    },
+  };
+}
+</script>
+{% endblock %}

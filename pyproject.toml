@@ -1,0 +1,40 @@
+[project]
+name = "face-checkin"
+version = "0.1.0"
+description = "Face-based attendance check-in web application"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.1,<6.0",
+    "gunicorn>=23.0,<24.0",
+    "django-environ>=0.11,<1.0",
+    "django-storages[s3]>=1.14,<2.0",
+    "boto3>=1.35,<2.0",
+    "Pillow>=11.0,<12.0",
+    "numpy>=2.0,<3.0",
+    "psycopg[binary]>=3.2,<4.0",
+    "dj-database-url>=2.3,<3.0",
+    "whitenoise>=6.8,<7.0",
+    "django-htmx>=1.21,<2.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0,<9.0",
+    "pytest-django>=4.9,<5.0",
+    "pytest-cov>=6.0,<7.0",
+    "black>=25.0,<26.0",
+    "ruff>=0.9,<1.0",
+    "django-debug-toolbar>=5.0,<6.0",
+    "factory-boy>=3.3,<4.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]

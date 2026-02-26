@@ -1,0 +1,96 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Face Check-in — Docker Compose
+#
+# Profiles:
+#   sqlite   (default) — Django + Caddy, SQLite on a persistent volume
+#   postgres           — Django + Caddy + PostgreSQL
+#
+# Usage:
+#   docker compose --profile sqlite up
+#   docker compose --profile postgres up
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-django-common: &django-common
+  build: .
+  env_file: .env
+  depends_on: []
+  restart: unless-stopped
+  volumes:
+    - media_data:/app/media
+
+services:
+  # ── Django (SQLite profile) ────────────────────────────────────────────────
+  django_sqlite:
+    <<: *django-common
+    profiles: [sqlite]
+    environment:
+      DATABASE_URL: "sqlite:////data/db.sqlite3"
+    volumes:
+      - media_data:/app/media
+      - sqlite_data:/data
+
+  # ── Django (PostgreSQL profile) ────────────────────────────────────────────
+  django_postgres:
+    <<: *django-common
+    profiles: [postgres]
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-face}:${POSTGRES_PASSWORD:-face}@db:5432/${POSTGRES_DB:-face_checkin}"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    profiles: [postgres]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-face}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-face}
+      POSTGRES_DB: ${POSTGRES_DB:-face_checkin}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-face}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Caddy (SQLite profile) ─────────────────────────────────────────────────
+  caddy_sqlite:
+    image: caddy:2-alpine
+    profiles: [sqlite]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - django_sqlite
+
+  # ── Caddy (PostgreSQL profile) ─────────────────────────────────────────────
+  caddy_postgres:
+    image: caddy:2-alpine
+    profiles: [postgres]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - django_postgres
+
+volumes:
+  sqlite_data:
+  postgres_data:
+  media_data:
+  caddy_data:
+  caddy_config:
