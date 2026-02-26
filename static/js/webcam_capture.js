@@ -12,6 +12,8 @@
  *     and store it in the hidden "face_embedding_json" field so it is submitted
  *     together with the admin form save (works for both new and existing records).
  *
+ * Depends on: face-api-utils.js  (must be loaded first)
+ *
  * The script is loaded via the FaceAdmin change_form_template and expects:
  *   - A file input with id="id_photo"
  *   - A hidden input with id="id_face_embedding_json"
@@ -20,130 +22,6 @@
 
 (function () {
   "use strict";
-
-  // ── helpers ──────────────────────────────────────────────────────────────
-
-  function dataURLtoBlob(dataURL) {
-    const [header, data] = dataURL.split(",");
-    const mime = header.match(/:(.*?);/)[1];
-    const binary = atob(data);
-    const array = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
-    return new Blob([array], { type: mime });
-  }
-
-  /** Load an image from a dataURL into an HTMLImageElement. */
-  function loadImage(dataURL) {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = dataURL;
-    });
-  }
-
-  // ── modal markup ─────────────────────────────────────────────────────────
-
-  function buildModal() {
-    const modal = document.createElement("div");
-    modal.id = "webcam-modal";
-    modal.style.cssText = [
-      "display:none",
-      "position:fixed",
-      "inset:0",
-      "background:rgba(0,0,0,.7)",
-      "z-index:9999",
-      "align-items:center",
-      "justify-content:center",
-    ].join(";");
-
-    modal.innerHTML = `
-      <div style="background:#fff;border-radius:8px;padding:24px;max-width:520px;width:95%;box-shadow:0 4px 32px rgba(0,0,0,.4)">
-        <h3 style="margin:0 0 12px;font-size:1.1rem">Capture from webcam</h3>
-        <video id="webcam-video" autoplay playsinline muted
-               style="width:100%;border-radius:4px;background:#000;display:block"></video>
-        <canvas id="webcam-canvas" style="display:none"></canvas>
-        <div id="webcam-preview-wrap" style="display:none;margin-top:8px">
-          <img id="webcam-preview" style="width:100%;border-radius:4px" alt="Captured photo" />
-        </div>
-        <div id="webcam-status" style="margin-top:8px;font-size:.85rem;color:#555"></div>
-        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" id="webcam-capture-btn"
-                  style="padding:8px 18px;background:#417690;color:#fff;border:none;border-radius:4px;cursor:pointer">
-            📷 Capture
-          </button>
-          <button type="button" id="webcam-retake-btn"
-                  style="display:none;padding:8px 18px;background:#6c757d;color:#fff;border:none;border-radius:4px;cursor:pointer">
-            🔄 Retake
-          </button>
-          <button type="button" id="webcam-use-btn"
-                  style="display:none;padding:8px 18px;background:#28a745;color:#fff;border:none;border-radius:4px;cursor:pointer">
-            ✅ Use this photo
-          </button>
-          <button type="button" id="webcam-close-btn"
-                  style="padding:8px 18px;background:#dc3545;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-left:auto">
-            ✕ Close
-          </button>
-        </div>
-      </div>`;
-
-    document.body.appendChild(modal);
-    return modal;
-  }
-
-  // ── face-api.js embedding extraction ─────────────────────────────────────
-
-  /**
-   * Returns:
-   *   { embedding: Float32Array(128) }  — face found
-   *   { embedding: null, reason: "no_face" }  — face-api loaded but no face detected
-   *   { embedding: null, reason: "not_loaded" }  — face-api.js not available
-   *   { embedding: null, reason: "models_missing" }  — model weights not found
-   *   { embedding: null, reason: "error", message: string }  — unexpected error
-   */
-  async function extractEmbedding(dataURL) {
-    if (typeof faceapi === "undefined") {
-      return { embedding: null, reason: "not_loaded" };
-    }
-
-    const modelsUrl =
-      window.FACE_API_MODELS_URL || "/static/js/face-api/models";
-
-    try {
-      // Load models if not already loaded
-      if (!faceapi.nets.ssdMobilenetv1.isLoaded) {
-        await faceapi.nets.ssdMobilenetv1.loadFromUri(modelsUrl);
-      }
-      if (!faceapi.nets.faceRecognitionNet.isLoaded) {
-        await faceapi.nets.faceRecognitionNet.loadFromUri(modelsUrl);
-      }
-      if (!faceapi.nets.faceLandmark68Net.isLoaded) {
-        await faceapi.nets.faceLandmark68Net.loadFromUri(modelsUrl);
-      }
-    } catch (e) {
-      // Model weight files not present (404) or network error
-      return { embedding: null, reason: "models_missing", message: e.message };
-    }
-
-    try {
-      // Use a regular HTMLImageElement — face-api.js works best with DOM elements
-      const img = await loadImage(dataURL);
-
-      const detection = await faceapi
-        .detectSingleFace(img, new faceapi.SsdMobilenetv1Options())
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!detection) {
-        return { embedding: null, reason: "no_face" };
-      }
-      return { embedding: detection.descriptor }; // Float32Array(128)
-    } catch (e) {
-      return { embedding: null, reason: "error", message: e.message };
-    }
-  }
-
-  // ── main init ─────────────────────────────────────────────────────────────
 
   function init() {
     const photoInput = document.getElementById("id_photo");
@@ -174,162 +52,19 @@
     statusLine.style.cssText = "margin-top:6px;font-size:.82rem;color:#555";
     thumbWrap.insertAdjacentElement("afterend", statusLine);
 
-    // Build modal (lazy)
-    const modal = buildModal();
-    const video = modal.querySelector("#webcam-video");
-    const canvas = modal.querySelector("#webcam-canvas");
-    const previewWrap = modal.querySelector("#webcam-preview-wrap");
-    const preview = modal.querySelector("#webcam-preview");
-    const webcamStatus = modal.querySelector("#webcam-status");
-    const captureBtnModal = modal.querySelector("#webcam-capture-btn");
-    const retakeBtn = modal.querySelector("#webcam-retake-btn");
-    const useBtn = modal.querySelector("#webcam-use-btn");
-    const closeBtn = modal.querySelector("#webcam-close-btn");
+    // Build modal via shared utility
+    const { openModal } = FaceApiUtils.buildWebcamModal("webcam");
 
-    let stream = null;
-    let capturedDataURL = null;
-
-    function stopStream() {
-      if (stream) {
-        stream.getTracks().forEach((t) => t.stop());
-        stream = null;
-      }
-    }
-
-    function openModal() {
-      modal.style.display = "flex";
-      capturedDataURL = null;
-      previewWrap.style.display = "none";
-      video.style.display = "block";
-      captureBtnModal.style.display = "";
-      retakeBtn.style.display = "none";
-      useBtn.style.display = "none";
-      webcamStatus.textContent = "Starting camera…";
-
-      navigator.mediaDevices
-        .getUserMedia({ video: { facingMode: "user" }, audio: false })
-        .then((s) => {
-          stream = s;
-          video.srcObject = s;
-          webcamStatus.textContent = "";
-        })
-        .catch((err) => {
-          webcamStatus.textContent = "Camera error: " + err.message;
-        });
-    }
-
-    function closeModal() {
-      stopStream();
-      modal.style.display = "none";
-    }
-
-    function captureFrame() {
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      canvas.getContext("2d").drawImage(video, 0, 0);
-      capturedDataURL = canvas.toDataURL("image/jpeg", 0.92);
-      preview.src = capturedDataURL;
-      previewWrap.style.display = "block";
-      video.style.display = "none";
-      captureBtnModal.style.display = "none";
-      retakeBtn.style.display = "";
-      useBtn.style.display = "";
-      webcamStatus.textContent = "Photo captured. Click 'Use this photo' to apply.";
-      stopStream();
-    }
-
-    function retake() {
-      capturedDataURL = null;
-      previewWrap.style.display = "none";
-      video.style.display = "block";
-      captureBtnModal.style.display = "";
-      retakeBtn.style.display = "none";
-      useBtn.style.display = "none";
-      webcamStatus.textContent = "Starting camera…";
-      navigator.mediaDevices
-        .getUserMedia({ video: { facingMode: "user" }, audio: false })
-        .then((s) => {
-          stream = s;
-          video.srcObject = s;
-          webcamStatus.textContent = "";
-        })
-        .catch((err) => {
-          webcamStatus.textContent = "Camera error: " + err.message;
-        });
-    }
-
-    async function usePhoto() {
-      if (!capturedDataURL) return;
-
-      // Convert dataURL → File and set on the photo input
-      const blob = dataURLtoBlob(capturedDataURL);
-      const file = new File([blob], "webcam_capture.jpg", { type: "image/jpeg" });
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      photoInput.files = dt.files;
-
-      // Show thumbnail
-      thumb.src = capturedDataURL;
-      thumbWrap.style.display = "block";
-
-      closeModal();
-
-      // ── Extract embedding via face-api.js and store in hidden field ───────
-      statusLine.textContent = "⏳ Detecting face and extracting embedding…";
-
-      const result = await extractEmbedding(capturedDataURL);
-
-      if (result.reason === "not_loaded") {
-        // face-api.js bundle not present — photo will be saved via normal admin save
-        statusLine.textContent =
-          "📸 Photo set. face-api.js not loaded — embedding will not be extracted. " +
-          "Save the form to persist the photo.";
-        return;
-      }
-
-      if (result.reason === "models_missing") {
-        statusLine.textContent =
-          "📸 Photo set. Face recognition model weights not found at " +
-          (window.FACE_API_MODELS_URL || "/static/js/face-api/models") +
-          " — embedding will not be extracted. Save the form to persist the photo.";
-        return;
-      }
-
-      if (result.reason === "no_face") {
-        statusLine.textContent =
-          "⚠️ No face detected in the captured photo. " +
-          "Try again with better lighting or a clearer face view. " +
-          "The photo has been set — save the form to persist it without an embedding.";
-        return;
-      }
-
-      if (result.reason === "error") {
-        statusLine.textContent = "❌ Face detection error: " + result.message;
-        return;
-      }
-
-      // We have a valid embedding — store it in the hidden field so it is
-      // submitted together with the admin form save.
-      const embedding = result.embedding; // Float32Array(128)
-      const hiddenField = document.getElementById("id_face_embedding_json");
-      if (hiddenField) {
-        hiddenField.value = JSON.stringify(Array.from(embedding));
-      }
-      statusLine.textContent =
-        "✅ Face detected! Embedding ready (" + embedding.length + "-d vector). Save the form to enroll.";
-    }
-
-    // ── event wiring ──────────────────────────────────────────────────────
-
-    captureBtn.addEventListener("click", openModal);
-    captureBtnModal.addEventListener("click", captureFrame);
-    retakeBtn.addEventListener("click", retake);
-    useBtn.addEventListener("click", usePhoto);
-    closeBtn.addEventListener("click", closeModal);
-
-    // Close on backdrop click
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) closeModal();
+    // Wire the page-level "Capture from webcam" button to open the modal
+    // with the context for this single-Face form.
+    captureBtn.addEventListener("click", () => {
+      openModal({
+        photoInput,
+        hiddenField: document.getElementById("id_face_embedding_json"),
+        statusLine,
+        thumbWrap,
+        thumb,
+      });
     });
 
     // Show thumbnail if photo already exists (edit form)

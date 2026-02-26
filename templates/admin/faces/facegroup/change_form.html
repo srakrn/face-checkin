@@ -17,11 +17,6 @@
   </script>
   {# Shared face-api utilities (must load before widget scripts) #}
   <script src="{% static 'js/face-api-utils.js' %}"></script>
-  {# Webcam capture widget #}
-  <script src="{% static 'js/webcam_capture.js' %}"></script>
-{% endblock %}
-
-{% block after_field_sets %}
-  <input type="hidden" name="face_embedding_json" id="id_face_embedding_json">
-  {{ block.super }}
+  {# Bulk webcam capture widget for inline Face rows #}
+  <script src="{% static 'js/bulk_webcam_capture.js' %}"></script>
 {% endblock %}
