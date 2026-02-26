@@ -1,0 +1,358 @@
+/* ============================================================
+   kiosk.css — Full-screen webcam kiosk layout for Face Check-in
+   ============================================================ */
+
+/* ── Reset / base ─────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: #0f1117;
+  color: #f0f0f0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ACTIVE KIOSK — full-screen camera layout
+   ══════════════════════════════════════════════════════════════ */
+
+/* Root wrapper fills the entire viewport */
+.kiosk-fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+}
+
+/* ── Full-screen video (contain = no cropping, letterbox/pillarbox) ── */
+.kiosk-video-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scaleX(-1); /* mirror for selfie feel */
+  display: block;
+  background: #000; /* letterbox bars */
+}
+
+/* Overlay canvas sits exactly on top of the video */
+.kiosk-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  transform: scaleX(-1); /* mirror to match video */
+}
+
+/* Hidden capture canvas (off-screen) */
+.kiosk-capture-canvas {
+  display: none;
+}
+
+/* ── Loading overlay (shown while models load) ────────────── */
+.kiosk-loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  background: rgba(15, 17, 23, 0.92);
+  color: #94a3b8;
+  font-size: 1.15rem;
+  z-index: 20;
+}
+
+.kiosk-spinner {
+  width: 52px;
+  height: 52px;
+  border: 4px solid #334155;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Top-left session info badge ──────────────────────────── */
+.kiosk-session-badge {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* subtle frosted-glass pill */
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 10px 18px;
+  max-width: 55vw;
+}
+
+.kiosk-session-name {
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kiosk-class-name {
+  font-size: clamp(0.75rem, 1.8vw, 1rem);
+  font-weight: 400;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Bottom-centre Take Photo button ──────────────────────── */
+.kiosk-capture-btn-wrap {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
+.kiosk-btn-capture {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 40px;
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  background: rgba(59, 130, 246, 0.9);
+  color: #ffffff;
+  box-shadow: 0 6px 32px rgba(59, 130, 246, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+  white-space: nowrap;
+}
+
+.kiosk-btn-capture:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 40px rgba(59, 130, 246, 0.65);
+}
+
+.kiosk-btn-capture:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.45);
+}
+
+.kiosk-btn-capture:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Top-right check-in result pop-up ─────────────────────── */
+.kiosk-result-popup {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 10;
+  width: min(340px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none; /* don't block camera interaction */
+}
+
+/* Status message card */
+.kiosk-status-card {
+  border-radius: 14px;
+  padding: 14px 18px;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  font-weight: 600;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid transparent;
+  transition: opacity 0.4s;
+  line-height: 1.4;
+}
+
+.kiosk-status-card.message-success {
+  background: rgba(20, 83, 45, 0.88);
+  color: #4ade80;
+  border-color: #166534;
+}
+
+.kiosk-status-card.message-warning {
+  background: rgba(78, 52, 0, 0.88);
+  color: #fbbf24;
+  border-color: #78350f;
+}
+
+.kiosk-status-card.message-error {
+  background: rgba(69, 10, 10, 0.88);
+  color: #f87171;
+  border-color: #7f1d1d;
+}
+
+.kiosk-status-card.message-info {
+  background: rgba(15, 40, 70, 0.88);
+  color: #60a5fa;
+  border-color: #1e3a5f;
+}
+
+/* Top-matches mini-table card */
+.kiosk-top-matches {
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+.kiosk-top-matches-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.kiosk-top-matches-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.kiosk-top-matches-table th {
+  text-align: left;
+  color: #64748b;
+  font-weight: 600;
+  padding: 2px 6px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kiosk-top-matches-table td {
+  padding: 5px 6px;
+  color: #cbd5e1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.kiosk-top-matches-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Highlight the best match row */
+.kiosk-top-match-best td {
+  color: #f0f0f0;
+  font-weight: 600;
+}
+
+.kiosk-top-match-best td:last-child {
+  color: #34d399;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   NON-ACTIVE STATES (not_found / draft / closed)
+   ══════════════════════════════════════════════════════════════ */
+
+.kiosk-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  height: 100vh;
+  width: 100vw;
+  padding: 24px 16px 16px;
+  gap: 16px;
+  position: relative;
+}
+
+.kiosk-title {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.kiosk-subtitle {
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  font-weight: 400;
+  color: #94a3b8;
+  text-align: center;
+  flex-shrink: 0;
+  margin-top: -8px;
+}
+
+.kiosk-state-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex: 1;
+  text-align: center;
+  padding: 32px;
+}
+
+.kiosk-state-icon {
+  font-size: 5rem;
+  line-height: 1;
+}
+
+.kiosk-state-title {
+  font-size: clamp(1.5rem, 4vw, 2.2rem);
+  font-weight: 700;
+  color: #f0f0f0;
+}
+
+.kiosk-state-subtitle {
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  color: #94a3b8;
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+/* ── Responsive tweaks ────────────────────────────────────── */
+@media (max-height: 500px) {
+  .kiosk-session-badge {
+    top: 12px;
+    left: 12px;
+    padding: 6px 12px;
+  }
+  .kiosk-capture-btn-wrap {
+    bottom: 16px;
+  }
+  .kiosk-btn-capture {
+    padding: 12px 28px;
+    font-size: 1rem;
+  }
+  .kiosk-result-popup {
+    top: 12px;
+    right: 12px;
+    width: min(280px, 85vw);
+  }
+}

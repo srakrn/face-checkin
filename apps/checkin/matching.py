@@ -61,3 +61,40 @@ def find_best_match(
     if best_score >= threshold:
         return best_face
     return None
+
+
+def find_top_matches(
+    query_embedding: list[float],
+    face_group_id: int,
+    top_n: int = 5,
+) -> list[dict]:
+    """
+    Compare *query_embedding* against all faces in *face_group_id* and return
+    the top *top_n* results sorted by descending cosine similarity.
+
+    Each entry in the returned list is a dict::
+
+        {
+            "face":       Face instance,
+            "similarity": float,   # cosine similarity in [-1, 1]
+        }
+
+    No threshold is applied — all faces are ranked and the top *top_n* are
+    returned regardless of score.
+    """
+    query_vec = np.array(query_embedding, dtype=np.float32)
+
+    faces = Face.objects.filter(
+        face_group_id=face_group_id,
+        embedding__isnull=False,
+    )
+
+    scored: list[tuple[float, Face]] = []
+    for face in faces:
+        stored_vec = _deserialise(bytes(face.embedding))
+        score = cosine_similarity(query_vec, stored_vec)
+        scored.append((score, face))
+
+    scored.sort(key=lambda t: t[0], reverse=True)
+
+    return [{"face": face, "similarity": score} for score, face in scored[:top_n]]

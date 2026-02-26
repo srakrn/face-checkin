@@ -11,6 +11,7 @@ class CheckIn(models.Model):
         Session,
         on_delete=models.CASCADE,
         related_name="checkins",
+        verbose_name="คาบเรียน",
     )
     face = models.ForeignKey(
         Face,
@@ -18,17 +19,21 @@ class CheckIn(models.Model):
         null=True,
         blank=True,
         related_name="checkins",
-        help_text="Null when the attempt did not match any enrolled face.",
+        verbose_name="ใบหน้า",
+        help_text="ว่างเปล่าเมื่อไม่พบใบหน้าที่ตรงกัน",
     )
-    matched = models.BooleanField(default=False)
-    checked_in_at = models.DateTimeField(auto_now_add=True)
+    matched = models.BooleanField(default=False, verbose_name="ตรงกัน")
+    checked_in_at = models.DateTimeField(auto_now_add=True, verbose_name="เวลาเช็คอิน")
     raw_face_image = models.ImageField(
         upload_to="checkins/images/",
-        help_text="Raw face image captured at check-in time, stored for audit.",
+        verbose_name="ภาพใบหน้า",
+        help_text="ภาพใบหน้าที่ถ่ายขณะเช็คอิน เก็บไว้เพื่อตรวจสอบ",
     )
 
     class Meta:
         ordering = ["-checked_in_at"]
+        verbose_name = "การเช็คอิน"
+        verbose_name_plural = "การเช็คอิน"
 
     def __str__(self) -> str:
         status = "matched" if self.matched else "unmatched"

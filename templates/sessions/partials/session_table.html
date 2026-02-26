@@ -1,0 +1,24 @@
+{% load static %}
+{% if sessions %}
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>State</th>
+        <th>Scheduled At</th>
+        <th>Auto-close At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="session-rows">
+      {% for session in sessions %}
+        {% include "sessions/partials/session_row.html" %}
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="empty-state">
+    <p>No sessions yet. <a href="{% url 'admin:checkin_sessions_session_add' %}">Create one in the admin</a>.</p>
+  </div>
+{% endif %}

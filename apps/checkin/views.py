@@ -21,7 +21,7 @@ from django.views.decorators.http import require_GET, require_POST
 
 from apps.sessions.models import Session
 
-from .matching import find_best_match
+from .matching import find_best_match, find_top_matches
 from .models import CheckIn
 
 
@@ -62,6 +62,18 @@ def checkin_match(request):
     face_group_id = session.klass.face_group_id
     matched_face = find_best_match(embedding, face_group_id)
 
+    # Compute top-5 matches (always, for display purposes)
+    top_matches = find_top_matches(embedding, face_group_id, top_n=5)
+    top_matches_data = [
+        {
+            "face_id": entry["face"].pk,
+            "custom_id": entry["face"].custom_id,
+            "name": entry["face"].name,
+            "similarity": round(entry["similarity"], 4),
+        }
+        for entry in top_matches
+    ]
+
     # Determine if this is a duplicate check-in within the session
     already_checked_in = False
     if matched_face is not None:
@@ -95,6 +107,7 @@ def checkin_match(request):
                     "name": matched_face.name,
                 },
                 "checkin_id": checkin.pk,
+                "top_matches": top_matches_data,
             }
         )
     else:
@@ -103,6 +116,7 @@ def checkin_match(request):
                 "matched": False,
                 "already_checked_in": False,
                 "checkin_id": checkin.pk,
+                "top_matches": top_matches_data,
             }
         )
 

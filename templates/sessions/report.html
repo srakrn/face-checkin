@@ -1,0 +1,145 @@
+{% extends "sessions/base.html" %}
+{% load static %}
+
+{% block title %}Report: {{ session.name }} — Face Check-in{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="breadcrumb">
+    <a href="{% url 'sessions:index' %}">Session Management</a> /
+    <a href="{% url 'sessions:class_session_list' session.klass.pk %}">{{ session.klass.name }}</a> /
+    Report
+  </div>
+
+  <div class="page-header">
+    <div>
+      <h1>{{ session.name }}</h1>
+      <div style="color: var(--color-muted); font-size: 0.875rem;">
+        Class: {{ session.klass.name }}
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-primary btn-sm">
+        ⬇ Export CSV
+      </a>
+      <a href="{% url 'sessions:class_session_list' session.klass.pk %}" class="btn btn-outline btn-sm">
+        ← Back to Sessions
+      </a>
+    </div>
+  </div>
+
+  {# ---- Meta info ---- #}
+  <div class="card">
+    <div class="card-body">
+      <div class="report-meta">
+        <div class="report-meta-item">
+          <span class="label">State</span>
+          <span class="value">
+            {% if session.state == "draft" %}
+              <span class="badge badge-draft">Draft</span>
+            {% elif session.state == "active" %}
+              <span class="badge badge-active">Active</span>
+            {% else %}
+              <span class="badge badge-closed">Closed</span>
+            {% endif %}
+          </span>
+        </div>
+        {% if session.scheduled_at %}
+          <div class="report-meta-item">
+            <span class="label">Scheduled At</span>
+            <span class="value">{{ session.scheduled_at }}</span>
+          </div>
+        {% endif %}
+        {% if session.auto_close_at %}
+          <div class="report-meta-item">
+            <span class="label">Auto-close At</span>
+            <span class="value">{{ session.auto_close_at }}</span>
+          </div>
+        {% endif %}
+      </div>
+
+      {# ---- Stats ---- #}
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-value">{{ checkins|length }}</div>
+          <div class="stat-label">Total Check-ins</div>
+        </div>
+        <div class="stat-box stat-matched">
+          <div class="stat-value">{{ matched_count }}</div>
+          <div class="stat-label">Matched</div>
+        </div>
+        <div class="stat-box stat-unmatched">
+          <div class="stat-value">{{ unmatched_count }}</div>
+          <div class="stat-label">Unmatched</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ---- Check-in table ---- #}
+  <div class="card">
+    <div class="card-header">
+      <h2>Check-in Log</h2>
+      <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-outline btn-sm">⬇ CSV</a>
+    </div>
+    <div class="table-wrapper">
+      {% if checkins %}
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Face Image</th>
+              <th>Name</th>
+              <th>Custom ID</th>
+              <th>Status</th>
+              <th>Checked In At</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for checkin in checkins %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                  {% if checkin.raw_face_image %}
+                    <img src="{{ checkin.raw_face_image.url }}"
+                         alt="Face image for check-in #{{ checkin.pk }}"
+                         style="width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border, #ddd);">
+                  {% else %}
+                    <span style="color: var(--color-muted);">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if checkin.face %}
+                    {{ checkin.face.name }}
+                  {% else %}
+                    <span style="color: var(--color-muted);">Unknown</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if checkin.face and checkin.face.custom_id %}
+                    <code>{{ checkin.face.custom_id }}</code>
+                  {% else %}
+                    <span style="color: var(--color-muted);">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if checkin.matched %}
+                    <span class="badge badge-active">✓ Matched</span>
+                  {% else %}
+                    <span class="badge badge-closed">✗ Unmatched</span>
+                  {% endif %}
+                </td>
+                <td>{{ checkin.checked_in_at }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <p>No check-ins recorded for this session yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

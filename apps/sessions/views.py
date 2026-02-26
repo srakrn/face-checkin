@@ -1,15 +1,23 @@
 """
-Session views — detail and report pages.
-These are stub implementations; full UI to be built in a later task.
+Session views — API endpoints + HTMX-powered management UI.
 """
 
+import csv
 import json
 
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
-from django.views.decorators.http import require_GET
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, render
+from django.views.decorators.http import require_GET, require_POST
+
+from apps.classes.models import Class
 
 from .models import Session
+
+
+# ---------------------------------------------------------------------------
+# API views (JSON) — used by the kiosk
+# ---------------------------------------------------------------------------
 
 
 @require_GET
@@ -30,7 +38,7 @@ def session_detail(request, pk: int):
 
 @require_GET
 def session_report(request, pk: int):
-    """GET /api/sessions/<pk>/report/ — return check-in report."""
+    """GET /api/sessions/<pk>/report/ — return check-in report as JSON."""
     session = get_object_or_404(Session, pk=pk)
     checkins = session.checkins.select_related("face").order_by("checked_in_at")
     data = [
@@ -45,3 +53,105 @@ def session_report(request, pk: int):
         for c in checkins
     ]
     return JsonResponse({"session_id": pk, "checkins": data})
+
+
+# ---------------------------------------------------------------------------
+# Management UI views (HTML / HTMX)
+# ---------------------------------------------------------------------------
+
+
+@login_required
+def class_session_list(request, class_pk: int):
+    """GET /sessions/classes/<class_pk>/ — list all sessions for a class."""
+    klass = get_object_or_404(Class, pk=class_pk)
+    sessions = klass.sessions.all()
+    all_classes = Class.objects.all().order_by("name")
+    return render(
+        request,
+        "sessions/session_list.html",
+        {
+            "klass": klass,
+            "sessions": sessions,
+            "all_classes": all_classes,
+        },
+    )
+
+
+@login_required
+def session_list(request):
+    """GET /sessions/ — list all classes (entry point for session management)."""
+    all_classes = Class.objects.prefetch_related("sessions").order_by("name")
+    return render(
+        request,
+        "sessions/index.html",
+        {"all_classes": all_classes},
+    )
+
+
+@login_required
+@require_POST
+def session_activate(request, pk: int):
+    """POST /sessions/<pk>/activate/ — activate a draft session (HTMX)."""
+    session = get_object_or_404(Session, pk=pk)
+    try:
+        session.activate()
+    except ValueError as exc:
+        return HttpResponse(str(exc), status=400)
+    # Return the updated session row partial
+    return render(request, "sessions/partials/session_row.html", {"session": session})
+
+
+@login_required
+@require_POST
+def session_close(request, pk: int):
+    """POST /sessions/<pk>/close/ — close an active session (HTMX)."""
+    session = get_object_or_404(Session, pk=pk)
+    try:
+        session.close()
+    except ValueError as exc:
+        return HttpResponse(str(exc), status=400)
+    return render(request, "sessions/partials/session_row.html", {"session": session})
+
+
+@login_required
+def session_report_page(request, pk: int):
+    """GET /sessions/<pk>/report/ — HTML report page for a session."""
+    session = get_object_or_404(Session, pk=pk)
+    checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
+    matched_count = sum(1 for c in checkins if c.matched)
+    unmatched_count = len(checkins) - matched_count
+    return render(
+        request,
+        "sessions/report.html",
+        {
+            "session": session,
+            "checkins": checkins,
+            "matched_count": matched_count,
+            "unmatched_count": unmatched_count,
+        },
+    )
+
+
+@login_required
+def session_report_csv(request, pk: int):
+    """GET /sessions/<pk>/report/csv/ — download check-in report as CSV."""
+    session = get_object_or_404(Session, pk=pk)
+    checkins = session.checkins.select_related("face").order_by("checked_in_at")
+
+    response = HttpResponse(content_type="text/csv")
+    filename = f"session_{session.pk}_report.csv"
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    writer = csv.writer(response)
+    writer.writerow(["#", "Name", "Custom ID", "Matched", "Checked In At"])
+    for i, c in enumerate(checkins, start=1):
+        writer.writerow(
+            [
+                i,
+                c.face.name if c.face else "",
+                c.face.custom_id if c.face else "",
+                "Yes" if c.matched else "No",
+                c.checked_in_at.strftime("%Y-%m-%d %H:%M:%S"),
+            ]
+        )
+    return response

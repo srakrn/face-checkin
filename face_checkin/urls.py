@@ -9,8 +9,13 @@ from django.urls import include, path
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Checkin API (match + embeddings)
     path("api/", include("apps.checkin.urls")),
+    # Sessions JSON API (detail + report)
+    path("api/sessions/", include("apps.sessions.api_urls")),
+    # Session management UI (HTMX)
     path("sessions/", include("apps.sessions.urls")),
+    # Kiosk HTML page
     path("", include("apps.checkin.kiosk_urls")),
 ]
 

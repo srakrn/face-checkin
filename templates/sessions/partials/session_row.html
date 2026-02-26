@@ -1,0 +1,57 @@
+{% load static %}
+<tr id="session-row-{{ session.pk }}">
+  <td>{{ session.pk }}</td>
+  <td>
+    <strong>{{ session.name }}</strong>
+    {% if session.state == "active" %}
+      <br>
+      <a href="/kiosk/{{ session.pk }}/" class="kiosk-link" target="_blank" rel="noopener">
+        🖥 Open Kiosk ↗
+      </a>
+    {% endif %}
+  </td>
+  <td>
+    {% if session.state == "draft" %}
+      <span class="badge badge-draft">Draft</span>
+    {% elif session.state == "active" %}
+      <span class="badge badge-active">Active</span>
+    {% else %}
+      <span class="badge badge-closed">Closed</span>
+    {% endif %}
+  </td>
+  <td>{{ session.scheduled_at|default:"—" }}</td>
+  <td>{{ session.auto_close_at|default:"—" }}</td>
+  <td>
+    <div class="action-cell">
+      {% if session.state == "draft" %}
+        <button
+          class="btn btn-success btn-sm"
+          hx-post="{% url 'sessions:activate' session.pk %}"
+          hx-target="#session-row-{{ session.pk }}"
+          hx-swap="outerHTML"
+          hx-indicator="#global-indicator"
+          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+        >
+          ▶ Activate
+        </button>
+      {% elif session.state == "active" %}
+        <button
+          class="btn btn-danger btn-sm"
+          hx-post="{% url 'sessions:close' session.pk %}"
+          hx-target="#session-row-{{ session.pk }}"
+          hx-swap="outerHTML"
+          hx-indicator="#global-indicator"
+          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+        >
+          ■ Close
+        </button>
+      {% endif %}
+      <a href="{% url 'sessions:report_page' session.pk %}" class="btn btn-outline btn-sm">
+        📋 Report
+      </a>
+      <a href="{% url 'admin:checkin_sessions_session_change' session.pk %}" class="btn btn-outline btn-sm">
+        ✏ Edit
+      </a>
+    </div>
+  </td>
+</tr>

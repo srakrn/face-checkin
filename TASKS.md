@@ -55,27 +55,26 @@ Legend: `[ ]` pending · `[-]` in progress · `[x]` done
   - Acceptance: `POST /faces/<pk>/enroll/` with a photo file → extracts embedding via face-api.js in browser → saves `Face.embedding`
   - Notes: Embedding extraction happens in the browser; the server receives the embedding as a JSON array alongside the photo
 
-- [ ] **TASK-203** Add bulk photo upload to FaceGroup admin
-  - Files: `apps/faces/admin.py`, `templates/admin/faces/facegroup/change_form.html`
-  - Acceptance: Admin can upload multiple photos at once; each photo creates a new `Face` record in the group
+- [x] **TASK-203** Add bulk photo taker to FaceGroup admin
+  - Acceptance: Admin can create multiple Face in FaceGroup admin page at once, and for each "row" of Face inside FaceGroup to be created, a "capture from webcam" identical to one in "Face" admin page is presence. Photo can be taken, face detected, and embedding extracted for each Face.
 
 ---
 
 ## Phase 3 — Kiosk UI polish
 
-- [ ] **TASK-301** Style the kiosk page with a clean, full-screen layout suitable for a tablet
+- [x] **TASK-301** Style the kiosk page with a clean, full-screen layout suitable for a tablet
   - Files: `templates/checkin/kiosk.html`, `static/css/kiosk.css`
   - Acceptance: Page fills the viewport; camera preview is centred; status messages are large and readable; "Take Photo" button is prominent
 
-- [ ] **TASK-302** Add face detection overlay on the kiosk camera preview
+- [x] **TASK-302** Add face detection overlay on the kiosk camera preview
   - Files: `templates/checkin/kiosk.html`
   - Acceptance: A bounding box is drawn around the detected face in real-time using face-api.js `detectAllFaces` in a `requestAnimationFrame` loop
 
-- [ ] **TASK-303** Add session-closed / session-not-found error states to the kiosk page
+- [x] **TASK-303** Add session-closed / session-not-found error states to the kiosk page
   - Files: `templates/checkin/kiosk.html`, `apps/checkin/kiosk_views.py`
   - Acceptance: If the session is `closed` or `draft`, the kiosk shows a clear message instead of the camera
 
-- [ ] **TASK-304** Implement client-side embedding cache using `/api/sessions/<pk>/embeddings/`
+- [x] **TASK-304** Implement client-side embedding cache using `/api/sessions/<pk>/embeddings/`
   - Files: `templates/checkin/kiosk.html`
   - Acceptance: On page load, the kiosk fetches all embeddings and stores them in memory; matching is done client-side first, then confirmed server-side
 
@@ -83,11 +82,11 @@ Legend: `[ ]` pending · `[-]` in progress · `[x]` done
 
 ## Phase 4 — Session management UI
 
-- [ ] **TASK-401** Create a session list/detail page (HTMX-powered) for admins
-  - Files: `apps/sessions/views.py`, `apps/sessions/urls.py`, `templates/sessions/`
+- [x] **TASK-401** Create a session list/detail page (HTMX-powered) for admins
+  - Files: `apps/sessions/views.py`, `apps/sessions/urls.py`, `apps/sessions/api_urls.py`, `templates/sessions/`
   - Acceptance: Admin can see all sessions for a class, with state badges; can activate/close sessions via HTMX buttons without full page reload
 
-- [ ] **TASK-402** Create a session report page
+- [x] **TASK-402** Create a session report page
   - Files: `apps/sessions/views.py`, `templates/sessions/report.html`
   - Acceptance: Shows a table of all check-ins for a session: participant name, custom ID, time, matched/unmatched; exportable to CSV
 

@@ -17,28 +17,34 @@ class Session(models.Model):
         on_delete=models.CASCADE,
         related_name="sessions",
         db_column="class_id",
+        verbose_name="วิชา",
     )
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, verbose_name="ชื่อคาบเรียน")
     state = models.CharField(
         max_length=10,
         choices=State.choices,
         default=State.DRAFT,
+        verbose_name="สถานะ",
     )
     scheduled_at = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="Optional scheduled start time (informational).",
+        verbose_name="เวลาเริ่มต้น",
+        help_text="เวลาเริ่มต้นที่กำหนด (ข้อมูลอ้างอิง)",
     )
     auto_close_at = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="If set, the session will automatically close at this time.",
+        verbose_name="ปิดอัตโนมัติเมื่อ",
+        help_text="หากกำหนดไว้ คาบเรียนจะปิดโดยอัตโนมัติเมื่อถึงเวลานี้",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="สร้างเมื่อ")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="แก้ไขล่าสุด")
 
     class Meta:
         ordering = ["-created_at"]
+        verbose_name = "คาบเรียน"
+        verbose_name_plural = "คาบเรียน"
 
     def __str__(self) -> str:
         return f"{self.name} [{self.state}]"

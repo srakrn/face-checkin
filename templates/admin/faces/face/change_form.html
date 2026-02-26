@@ -7,14 +7,8 @@
   <script>
     window.FACE_API_MODELS_URL = "{% static 'js/face-api/models' %}";
   </script>
-  <script>
-    (function () {
-      var s = document.createElement("script");
-      s.src = "{% static 'js/face-api/face-api.min.js' %}";
-      s.onerror = function () { /* face-api.js not available — embedding extraction skipped */ };
-      document.head.appendChild(s);
-    })();
-  </script>
+  {# Load face-api.js synchronously so it is available when the utility scripts run #}
+  <script src="{% static 'js/face-api/face-api.min.js' %}"></script>
   {# Shared face-api utilities (must load before widget scripts) #}
   <script src="{% static 'js/face-api-utils.js' %}"></script>
   {# Webcam capture widget #}

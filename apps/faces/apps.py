@@ -4,4 +4,4 @@ from django.apps import AppConfig
 class FacesConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "apps.faces"
-    verbose_name = "Faces"
+    verbose_name = "ใบหน้า"

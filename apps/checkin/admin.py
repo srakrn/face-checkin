@@ -10,3 +10,7 @@ class CheckInAdmin(admin.ModelAdmin):
     search_fields = ("face__name", "face__custom_id", "session__name")
     readonly_fields = ("checked_in_at", "raw_face_image")
     date_hierarchy = "checked_in_at"
+
+    def get_model_perms(self, request):
+        """Hide this model from the admin index / sidebar."""
+        return {}

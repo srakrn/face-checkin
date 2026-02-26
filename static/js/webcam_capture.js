@@ -67,6 +67,40 @@
       });
     });
 
+    // Extract embedding when a file is selected via the file input directly
+    photoInput.addEventListener("change", async () => {
+      const file = photoInput.files && photoInput.files[0];
+      if (!file) return;
+
+      const hiddenField = document.getElementById("id_face_embedding_json");
+
+      // Show thumbnail preview
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const dataURL = e.target.result;
+        thumb.src = dataURL;
+        thumbWrap.style.display = "block";
+
+        // Extract embedding
+        statusLine.textContent = "⏳ Detecting face and extracting embedding…";
+        const result = await FaceApiUtils.extractEmbedding(dataURL);
+        const msg = FaceApiUtils.embeddingStatusMessage(result);
+
+        if (msg !== null) {
+          statusLine.textContent = msg;
+          return;
+        }
+
+        const embedding = result.embedding;
+        if (hiddenField) {
+          hiddenField.value = JSON.stringify(Array.from(embedding));
+        }
+        statusLine.textContent =
+          "✅ Face detected! Embedding ready (" + embedding.length + "-d vector). Save the form to enroll.";
+      };
+      reader.readAsDataURL(file);
+    });
+
     // Show thumbnail if photo already exists (edit form)
     const currentPhotoLink = document.querySelector(".field-photo a");
     if (currentPhotoLink) {

@@ -7,6 +7,8 @@ class ClassTagInline(admin.TabularInline):
     model = ClassTag
     extra = 1
     fields = ("tag",)
+    verbose_name = "แท็ก"
+    verbose_name_plural = "แท็ก"
 
 
 @admin.register(Class)
@@ -16,7 +18,16 @@ class ClassAdmin(admin.ModelAdmin):
     search_fields = ("name", "description", "tags__tag")
     inlines = [ClassTagInline]
     readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        (None, {
+            "fields": ("name", "face_group", "description"),
+        }),
+        ("เวลาบันทึก", {
+            "fields": ("created_at", "updated_at"),
+            "classes": ("collapse",),
+        }),
+    )
 
-    @admin.display(description="Tags")
+    @admin.display(description="แท็ก")
     def tag_list(self, obj):
         return ", ".join(obj.tags.values_list("tag", flat=True))

@@ -1,64 +1,448 @@
-{% extends "base.html" %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Check-in{% if session %} — {{ session.name }}{% endif %}</title>
 
-{% block title %}Check-in — {{ session.name }}{% endblock %}
+  {# Kiosk stylesheet #}
+  <link rel="stylesheet" href="{% static 'css/kiosk.css' %}" />
 
-{% block extra_head %}
   {# face-api.js — model files must be placed in static/js/face-api/models/ #}
   <script src="{% static 'js/face-api/face-api.min.js' %}"></script>
-{% endblock %}
 
-{% block content %}
-<div
-  x-data="kioskApp('{% url 'checkin_api:match' %}', '{% static 'js/face-api/models' %}', {{ session.id }})"
-  class="kiosk-container"
->
-  <h1>{{ session.name }}</h1>
+  {# Alpine.js #}
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body>
 
-  {% if not session_active %}
-    <p class="status-message">This session is not currently active.</p>
-  {% else %}
-    {# Camera preview #}
-    <video x-ref="video" autoplay playsinline muted></video>
-    <canvas x-ref="canvas" style="display:none;"></canvas>
-
-    {# Status message area #}
-    <div x-show="message" x-text="message" :class="messageClass"></div>
-
-    {# Take Photo button #}
-    <button
-      @click="takePhoto"
-      :disabled="processing"
-      x-text="processing ? 'Processing…' : 'Take Photo'"
-    ></button>
-  {% endif %}
+{% if session_state == "not_found" %}
+{# ── Session not found ──────────────────────────────────────────────────── #}
+<div class="kiosk-container">
+  <div class="kiosk-state-panel">
+    <div class="kiosk-state-icon">🔍</div>
+    <div class="kiosk-state-title">Session Not Found</div>
+    <div class="kiosk-state-subtitle">
+      The check-in session you are looking for does not exist.<br />
+      Please contact a staff member for assistance.
+    </div>
+  </div>
 </div>
 
+{% elif session_state == "draft" %}
+{# ── Session not yet started ────────────────────────────────────────────── #}
+<div class="kiosk-container">
+  <h1 class="kiosk-title">{{ session.name }}</h1>
+  <p class="kiosk-subtitle">{{ session.klass.name }}</p>
+  <div class="kiosk-state-panel">
+    <div class="kiosk-state-icon">⏳</div>
+    <div class="kiosk-state-title">Session Not Started</div>
+    <div class="kiosk-state-subtitle">
+      This check-in session has not been activated yet.<br />
+      Please wait for a staff member to open the session.
+    </div>
+  </div>
+</div>
 <script>
-function kioskApp(matchUrl, modelPath, sessionId) {
+  (function () {
+    var sessionDetailUrl = "{% url 'sessions_api:detail' session.id %}";
+    setInterval(function () {
+      fetch(sessionDetailUrl)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.state === 'active') { location.reload(); }
+        })
+        .catch(function () { /* ignore network errors */ });
+    }, 60000);
+  })();
+</script>
+
+{% elif session_state == "closed" %}
+{# ── Session closed ─────────────────────────────────────────────────────── #}
+<div class="kiosk-container">
+  <h1 class="kiosk-title">{{ session.name }}</h1>
+  <p class="kiosk-subtitle">{{ session.klass.name }}</p>
+  <div class="kiosk-state-panel">
+    <div class="kiosk-state-icon">🔒</div>
+    <div class="kiosk-state-title">Session Closed</div>
+    <div class="kiosk-state-subtitle">
+      This check-in session has ended.<br />
+      No further check-ins are being accepted.
+    </div>
+  </div>
+</div>
+<script>
+  (function () {
+    var sessionDetailUrl = "{% url 'sessions_api:detail' session.id %}";
+    setInterval(function () {
+      fetch(sessionDetailUrl)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          if (data.state === 'active') { location.reload(); }
+        })
+        .catch(function () { /* ignore network errors */ });
+    }, 60000);
+  })();
+</script>
+
+{% else %}
+{# ── Active session — full-screen kiosk UI ───────────────────────────────── #}
+<div
+  x-data="kioskApp(
+    '{% url 'checkin_api:match' %}',
+    '{% static 'js/face-api/models' %}',
+    {{ session.id }},
+    '{% url 'checkin_api:embeddings' session.id %}'
+  )"
+  class="kiosk-fullscreen"
+>
+
+  {# ── Loading overlay (models + embeddings) ───────────────────────────── #}
+  <template x-if="loading">
+    <div class="kiosk-loading-overlay">
+      <div class="kiosk-spinner"></div>
+      <span x-text="loadingMessage">Loading…</span>
+    </div>
+  </template>
+
+  {# ── Full-screen webcam + face-detection overlay ──────────────────────── #}
+  <video
+    x-ref="video"
+    class="kiosk-video-bg"
+    autoplay
+    playsinline
+    muted
+  ></video>
+  <canvas x-ref="overlay" class="kiosk-overlay"></canvas>
+
+  {# Hidden canvas used for frame capture #}
+  <canvas x-ref="canvas" class="kiosk-capture-canvas"></canvas>
+
+  {# ── Top-left: session info badge ─────────────────────────────────────── #}
+  <div class="kiosk-session-badge">
+    <span class="kiosk-session-name">{{ session.name }}</span>
+    <span class="kiosk-class-name">{{ session.klass.name }}</span>
+  </div>
+
+  {# ── Top-right: check-in result pop-up ────────────────────────────────── #}
+  <div class="kiosk-result-popup">
+    {# Status message card #}
+    <template x-if="message">
+      <div
+        class="kiosk-status-card"
+        :class="messageClass"
+        x-text="message"
+      ></div>
+    </template>
+
+    {# Top-5 matches mini-table #}
+    <template x-if="topMatches.length > 0">
+      <div class="kiosk-top-matches">
+        <div class="kiosk-top-matches-title">Top matches</div>
+        <table class="kiosk-top-matches-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="(match, idx) in topMatches" :key="match.face_id">
+              <tr :class="idx === 0 ? 'kiosk-top-match-best' : ''">
+                <td x-text="idx + 1"></td>
+                <td x-text="match.custom_id || match.face_id"></td>
+                <td x-text="match.name"></td>
+                <td x-text="(match.similarity * 100).toFixed(1) + '%'"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </template>
+  </div>
+
+  {# ── Bottom-centre: Take Photo button ─────────────────────────────────── #}
+  <template x-if="!loading">
+    <div class="kiosk-capture-btn-wrap">
+      <button
+        class="kiosk-btn-capture"
+        @click="takePhoto"
+        :disabled="processing"
+      >
+        <span x-text="processing ? '⏳' : '📷'"></span>
+        <span x-text="processing ? 'Processing…' : 'Take Photo'"></span>
+      </button>
+    </div>
+  </template>
+
+</div>
+{% endif %}
+
+<script>
+/**
+ * kioskApp — AlpineJS component for the face check-in kiosk.
+ *
+ * Features implemented:
+ *   TASK-301  Full-screen styled layout (CSS in kiosk.css)
+ *   TASK-302  Real-time face detection overlay via requestAnimationFrame
+ *   TASK-303  Session state error panels (handled server-side above)
+ *   TASK-304  Client-side embedding cache; client-side match confirmed server-side
+ *
+ * @param {string} matchUrl        POST endpoint for server-side match confirmation
+ * @param {string} modelPath       URL prefix for face-api.js model weights
+ * @param {number} sessionId       Django Session PK
+ * @param {string} embeddingsUrl   GET endpoint returning all session embeddings
+ */
+function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
   return {
+    // ── state ──────────────────────────────────────────────────────────────
+    loading: true,
+    loadingMessage: 'Loading face recognition models…',
     processing: false,
     message: '',
     messageClass: '',
 
-    async init() {
-      // Load face-api.js models
-      await faceapi.nets.ssdMobilenetv1.loadFromUri(modelPath);
-      await faceapi.nets.faceLandmark68Net.loadFromUri(modelPath);
-      await faceapi.nets.faceRecognitionNet.loadFromUri(modelPath);
+    /**
+     * Top-5 matches returned by the server after the last photo submission.
+     * Each entry: { face_id, custom_id, name, similarity }
+     * @type {Array<{face_id: number, custom_id: string, name: string, similarity: number}>}
+     */
+    topMatches: [],
 
-      // Start camera
+    /** @type {Array<{face_id: number, custom_id: string, name: string, embedding: Float32Array}>} */
+    cachedEmbeddings: [],
+
+    /** requestAnimationFrame handle for the overlay loop */
+    _rafHandle: null,
+
+    /** setInterval handle for session-state polling */
+    _pollHandle: null,
+
+    // ── lifecycle ──────────────────────────────────────────────────────────
+
+    async init() {
+      // 1. Load face-api.js models
+      try {
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(modelPath);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(modelPath);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(modelPath);
+      } catch (err) {
+        this.loading = false;
+        this.showMessage('Failed to load face recognition models: ' + err.message, 'error');
+        return;
+      }
+
+      // 2. Fetch and cache embeddings from the server
+      this.loadingMessage = 'Fetching participant embeddings…';
+      try {
+        const resp = await fetch(embeddingsUrl);
+        if (resp.ok) {
+          const data = await resp.json();
+          this.cachedEmbeddings = (data.embeddings || []).map(e => ({
+            face_id: e.face_id,
+            custom_id: e.custom_id,
+            name: e.name,
+            embedding: new Float32Array(e.embedding),
+          }));
+        }
+        // Non-OK response is non-fatal — fall back to server-only matching
+      } catch (_) {
+        // Network error fetching embeddings — fall back to server-only matching
+      }
+
+      // 3. Start camera — wait for Alpine to render the video element first
+      this.loading = false;
+      await this.$nextTick();
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user' },
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } },
+          audio: false,
         });
         this.$refs.video.srcObject = stream;
+        // Wait for video metadata so we know dimensions
+        await new Promise(resolve => {
+          if (this.$refs.video.readyState >= 1) { resolve(); return; }
+          this.$refs.video.addEventListener('loadedmetadata', resolve, { once: true });
+        });
+        this._startOverlay();
       } catch (err) {
         this.showMessage('Camera access denied: ' + err.message, 'error');
       }
+
+      // 4. Poll session state every ~60 s; reload if it changes (e.g. closed)
+      this._startSessionPoll();
     },
 
+    destroy() {
+      this._stopOverlay();
+      this._stopSessionPoll();
+      const video = this.$refs.video;
+      if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+      }
+    },
+
+    // ── face detection overlay (TASK-302) ──────────────────────────────────
+
+    _startOverlay() {
+      const loop = async () => {
+        await this._drawOverlay();
+        this._rafHandle = requestAnimationFrame(loop);
+      };
+      this._rafHandle = requestAnimationFrame(loop);
+    },
+
+    _stopOverlay() {
+      if (this._rafHandle !== null) {
+        cancelAnimationFrame(this._rafHandle);
+        this._rafHandle = null;
+      }
+    },
+
+    // ── session-state polling ──────────────────────────────────────────────
+
+    _startSessionPoll() {
+      const sessionApiUrl = '{% url "sessions_api:detail" session.id %}';
+      this._pollHandle = setInterval(async () => {
+        try {
+          const resp = await fetch(sessionApiUrl);
+          if (!resp.ok) return;
+          const data = await resp.json();
+          // Reload whenever the state is no longer active (e.g. closed)
+          if (data.state !== 'active') {
+            location.reload();
+          }
+        } catch (_) {
+          // Ignore network errors — will retry next interval
+        }
+      }, 60000);
+    },
+
+    _stopSessionPoll() {
+      if (this._pollHandle !== null) {
+        clearInterval(this._pollHandle);
+        this._pollHandle = null;
+      }
+    },
+
+    async _drawOverlay() {
+      const video = this.$refs.video;
+      const overlayCanvas = this.$refs.overlay;
+      if (!video || !overlayCanvas) return;
+      if (video.readyState < 2) return; // not enough data yet
+
+      const vw = video.videoWidth;
+      const vh = video.videoHeight;
+      if (!vw || !vh) return;
+
+      // Keep overlay canvas dimensions in sync with the video element's
+      // rendered size (CSS pixels) so the box aligns correctly.
+      const rect = video.getBoundingClientRect();
+      if (overlayCanvas.width !== rect.width || overlayCanvas.height !== rect.height) {
+        overlayCanvas.width = rect.width;
+        overlayCanvas.height = rect.height;
+      }
+
+      const ctx = overlayCanvas.getContext('2d');
+      ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+      // Run detection at a reduced input size for performance
+      const detections = await faceapi
+        .detectAllFaces(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }));
+
+      if (!detections || detections.length === 0) return;
+
+      // ── Compute the actual rendered video rect inside the element ──────────
+      // object-fit: contain means the video is letterboxed/pillarboxed.
+      // We must offset and scale boxes to the contained area, not the full element.
+      const elW = overlayCanvas.width;
+      const elH = overlayCanvas.height;
+      const videoAspect = vw / vh;
+      const elAspect = elW / elH;
+
+      let renderedW, renderedH, offsetX, offsetY;
+      if (videoAspect > elAspect) {
+        // Pillarboxed — video fills width, bars on top/bottom
+        renderedW = elW;
+        renderedH = elW / videoAspect;
+        offsetX = 0;
+        offsetY = (elH - renderedH) / 2;
+      } else {
+        // Letterboxed — video fills height, bars on left/right
+        renderedH = elH;
+        renderedW = elH * videoAspect;
+        offsetX = (elW - renderedW) / 2;
+        offsetY = 0;
+      }
+
+      const scaleX = renderedW / vw;
+      const scaleY = renderedH / vh;
+
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = '#3b82f6';
+      ctx.shadowBlur = 8;
+
+      for (const det of detections) {
+        const box = det.box;
+        // The overlay canvas has CSS transform: scaleX(-1) matching the video,
+        // so draw the box at its natural (un-mirrored) coordinates.
+        const x = offsetX + box.x * scaleX;
+        const y = offsetY + box.y * scaleY;
+        const w = box.width * scaleX;
+        const h = box.height * scaleY;
+
+        ctx.strokeRect(x, y, w, h);
+      }
+    },
+
+    // ── client-side cosine similarity (TASK-304) ───────────────────────────
+
+    /**
+     * Compute cosine similarity between two Float32Array vectors.
+     * Returns a value in [-1, 1]; higher = more similar.
+     */
+    _cosineSimilarity(a, b) {
+      let dot = 0, normA = 0, normB = 0;
+      for (let i = 0; i < a.length; i++) {
+        dot   += a[i] * b[i];
+        normA += a[i] * a[i];
+        normB += b[i] * b[i];
+      }
+      if (normA === 0 || normB === 0) return 0;
+      return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+    },
+
+    /**
+     * Find the best client-side match for a descriptor.
+     * Returns { face_id, name, custom_id, similarity } or null if no match
+     * exceeds the threshold.
+     *
+     * Threshold mirrors the server default (0.6 cosine similarity).
+     */
+    _clientSideMatch(descriptor, threshold = 0.6) {
+      let best = null;
+      let bestSim = -Infinity;
+      for (const entry of this.cachedEmbeddings) {
+        const sim = this._cosineSimilarity(descriptor, entry.embedding);
+        if (sim > bestSim) {
+          bestSim = sim;
+          best = entry;
+        }
+      }
+      if (best && bestSim >= threshold) {
+        return { ...best, similarity: bestSim };
+      }
+      return null;
+    },
+
+    // ── photo capture & submission ─────────────────────────────────────────
+
     async takePhoto() {
+      if (this.processing) return;
       this.processing = true;
       this.message = '';
 
@@ -67,11 +451,12 @@ function kioskApp(matchUrl, modelPath, sessionId) {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
+      // Draw un-mirrored frame (server needs the real image)
       ctx.drawImage(video, 0, 0);
 
       // Detect face and extract embedding
       const detection = await faceapi
-        .detectSingleFace(canvas)
+        .detectSingleFace(canvas, new faceapi.SsdMobilenetv1Options())
         .withFaceLandmarks()
         .withFaceDescriptor();
 
@@ -81,48 +466,81 @@ function kioskApp(matchUrl, modelPath, sessionId) {
         return;
       }
 
-      const embedding = Array.from(detection.descriptor);
+      const descriptor = detection.descriptor; // Float32Array(128)
+      const embedding = Array.from(descriptor);
 
-      // Convert canvas to blob
+      // ── TASK-304: client-side pre-check ───────────────────────────────────
+      // If we have cached embeddings, do a quick local match first.
+      // This gives instant feedback and reduces server load.
+      // We still always confirm with the server (authoritative).
+      if (this.cachedEmbeddings.length > 0) {
+        const clientMatch = this._clientSideMatch(descriptor);
+        if (!clientMatch) {
+          // Client-side says no match — skip server round-trip
+          this.showMessage('Face not recognised. Please try again or contact staff.', 'error');
+          this.processing = false;
+          this._scheduleMessageClear();
+          return;
+        }
+        // Client-side found a candidate — show optimistic feedback while
+        // the server confirms.
+        this.showMessage(`Verifying… ${clientMatch.name}`, 'info');
+      }
+
+      // Convert canvas to blob for server submission
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
 
-      // Build form data
       const formData = new FormData();
       formData.append('session_id', sessionId);
       formData.append('embedding', JSON.stringify(embedding));
       formData.append('face_image', blob, 'face.jpg');
 
-      // Send to server
       try {
         const resp = await fetch(matchUrl, { method: 'POST', body: formData });
         const data = await resp.json();
 
         if (!resp.ok) {
           this.showMessage(data.error || 'Server error.', 'error');
-        } else if (data.matched) {
-          if (data.already_checked_in) {
-            this.showMessage(`Welcome back, ${data.face.name}! You have already checked in.`, 'warning');
-          } else {
-            this.showMessage(`Welcome, ${data.face.name}! Check-in successful.`, 'success');
-          }
+          this.topMatches = [];
         } else {
-          this.showMessage('Face not recognised. Please try again or contact staff.', 'error');
+          // Always update top matches from server response
+          this.topMatches = data.top_matches || [];
+
+          if (data.matched) {
+            if (data.already_checked_in) {
+              this.showMessage(`Welcome back, ${data.face.name}! You have already checked in.`, 'warning');
+            } else {
+              this.showMessage(`✅ Welcome, ${data.face.name}! Check-in successful.`, 'success');
+            }
+          } else {
+            this.showMessage('Face not recognised. Please try again or contact staff.', 'error');
+          }
         }
       } catch (err) {
         this.showMessage('Network error: ' + err.message, 'error');
+        this.topMatches = [];
       }
 
       this.processing = false;
-
-      // Auto-clear message after 4 seconds
-      setTimeout(() => { this.message = ''; }, 4000);
+      this._scheduleMessageClear();
     },
+
+    // ── helpers ────────────────────────────────────────────────────────────
 
     showMessage(text, type) {
       this.message = text;
       this.messageClass = 'message-' + type;
     },
+
+    _scheduleMessageClear(delay = 5000) {
+      setTimeout(() => {
+        this.message = '';
+        this.messageClass = '';
+        this.topMatches = [];
+      }, delay);
+    },
   };
 }
 </script>
-{% endblock %}
+</body>
+</html>

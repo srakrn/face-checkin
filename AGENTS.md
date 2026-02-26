@@ -155,6 +155,6 @@ docker compose --profile postgres up --build
 3. **Embedding bytes**: Always serialise with `numpy.ndarray.tobytes()` and deserialise with `numpy.frombuffer(..., dtype='float32')`.
 4. **State transitions**: Always use `Session.activate()` / `Session.close()` — never set `state` directly.
 5. **All check-ins are logged**: Even duplicates and unmatched attempts. Never skip `CheckIn` creation.
-6. **Static face-api.js assets**: Place `face-api.min.js` and model weight files under `static/js/face-api/`. These are not committed to Git (large binary files).
+6. **Static face-api.js assets**: Place `face-api.min.js` and model weight files under `static/js/face-api/`. Can be committed by Git.
 7. **Migrations**: After changing models, run `python manage.py makemigrations` and commit the migration files.
 8. **Tests**: Place tests in `tests/` at the app level or in a top-level `tests/` directory. Use `pytest-django`.

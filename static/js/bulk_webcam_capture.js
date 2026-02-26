@@ -87,6 +87,36 @@
     captureBtn.addEventListener("click", () => {
       sharedModal.openModal({ photoInput, hiddenField, statusLine, thumbWrap, thumb });
     });
+
+    // Extract embedding when a file is selected via the file input directly
+    photoInput.addEventListener("change", async () => {
+      const file = photoInput.files && photoInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const dataURL = e.target.result;
+        thumb.src = dataURL;
+        thumbWrap.style.display = "block";
+
+        statusLine.textContent = "⏳ Detecting face and extracting embedding…";
+        const result = await FaceApiUtils.extractEmbedding(dataURL);
+        const msg = FaceApiUtils.embeddingStatusMessage(result);
+
+        if (msg !== null) {
+          statusLine.textContent = msg;
+          return;
+        }
+
+        const embedding = result.embedding;
+        if (hiddenField) {
+          hiddenField.value = JSON.stringify(Array.from(embedding));
+        }
+        statusLine.textContent =
+          "✅ Face detected! Embedding ready (" + embedding.length + "-d vector). Save the form to enroll.";
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   // ── row scanning and mutation observation ─────────────────────────────────

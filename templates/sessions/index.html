@@ -1,0 +1,35 @@
+{% extends "sessions/base.html" %}
+{% load static %}
+
+{% block title %}Session Management — Face Check-in{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+  <div class="page-header">
+    <div>
+      <h1>Session Management</h1>
+    </div>
+    <a href="{% url 'admin:index' %}" class="btn btn-outline btn-sm">← Admin</a>
+  </div>
+
+  {% if all_classes %}
+    <div class="class-grid">
+      {% for klass in all_classes %}
+        <a href="{% url 'sessions:class_session_list' klass.pk %}" class="class-card">
+          <h3>{{ klass.name }}</h3>
+          <div class="meta">
+            {{ klass.sessions.count }} session{{ klass.sessions.count|pluralize }}
+            &nbsp;·&nbsp; Face group: {{ klass.face_group.name }}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card">
+      <div class="empty-state">
+        <p>No classes found. <a href="{% url 'admin:classes_class_add' %}">Create one in the admin</a>.</p>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
