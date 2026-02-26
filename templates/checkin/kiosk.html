@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Check-in{% if session %} — {{ session.name }}{% endif %}</title>
+  <title>เช็กอิน{% if session %}: {{ session.klass.name }} {{ session.name }}{% endif %}</title>
 
   {# Kiosk stylesheet #}
   <link rel="stylesheet" href="{% static 'css/kiosk.css' %}" />
@@ -22,11 +22,7 @@
 <div class="kiosk-container">
   <div class="kiosk-state-panel">
     <div class="kiosk-state-icon">🔍</div>
-    <div class="kiosk-state-title">Session Not Found</div>
-    <div class="kiosk-state-subtitle">
-      The check-in session you are looking for does not exist.<br />
-      Please contact a staff member for assistance.
-    </div>
+    <div class="kiosk-state-title">ไม่พบคาบเรียนให้เช็กอิน</div>
   </div>
 </div>
 
@@ -37,11 +33,7 @@
   <p class="kiosk-subtitle">{{ session.klass.name }}</p>
   <div class="kiosk-state-panel">
     <div class="kiosk-state-icon">⏳</div>
-    <div class="kiosk-state-title">Session Not Started</div>
-    <div class="kiosk-state-subtitle">
-      This check-in session has not been activated yet.<br />
-      Please wait for a staff member to open the session.
-    </div>
+    <div class="kiosk-state-title">คาบเรียนนี้ยังไม่เริ่ม</div>
   </div>
 </div>
 <script>
@@ -65,10 +57,8 @@
   <p class="kiosk-subtitle">{{ session.klass.name }}</p>
   <div class="kiosk-state-panel">
     <div class="kiosk-state-icon">🔒</div>
-    <div class="kiosk-state-title">Session Closed</div>
+    <div class="kiosk-state-title">หมดเวลาเช็กอิน</div>
     <div class="kiosk-state-subtitle">
-      This check-in session has ended.<br />
-      No further check-ins are being accepted.
     </div>
   </div>
 </div>
@@ -139,14 +129,14 @@
     {# Top-5 matches mini-table #}
     <template x-if="topMatches.length > 0">
       <div class="kiosk-top-matches">
-        <div class="kiosk-top-matches-title">Top matches</div>
+        <div class="kiosk-top-matches-title">รายการหน้าคล้าย</div>
         <table class="kiosk-top-matches-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Score</th>
+              <th>รหัส</th>
+              <th>ชื่อ</th>
+              <th>ตวามคล้าย</th>
             </tr>
           </thead>
           <tbody>
@@ -164,16 +154,19 @@
     </template>
   </div>
 
-  {# ── Bottom-centre: Take Photo button ─────────────────────────────────── #}
+  {# ── Bottom-centre: status bar + manual fallback button ──────────────── #}
   <template x-if="!loading">
     <div class="kiosk-capture-btn-wrap">
+      {# Auto-capture status indicator #}
+      <div class="kiosk-auto-status" :class="autoStatusClass" x-text="autoStatusText"></div>
+      {# Manual fallback button — always available #}
       <button
         class="kiosk-btn-capture"
         @click="takePhoto"
-        :disabled="processing"
+        :disabled="processing || haltUntilClear"
       >
         <span x-text="processing ? '⏳' : '📷'"></span>
-        <span x-text="processing ? 'Processing…' : 'Take Photo'"></span>
+        <span x-text="processing ? 'กำลังประมวลผล' : 'ถ่ายรูป'"></span>
       </button>
     </div>
   </template>
@@ -190,6 +183,14 @@
  *   TASK-302  Real-time face detection overlay via requestAnimationFrame
  *   TASK-303  Session state error panels (handled server-side above)
  *   TASK-304  Client-side embedding cache; client-side match confirmed server-side
+ *   TASK-305  Auto-capture: stable face → auto photo → halt until clear → ready
+ *
+ * Auto-capture state machine
+ * ──────────────────────────
+ *   READY        No face (or unstable face). Watching for a stable face.
+ *   LOCKING      A face has been detected and is stable. Counting down to capture.
+ *   PROCESSING   Photo taken; waiting for server response.
+ *   HALTED       Result shown. Waiting for the frame to be clear before resetting.
  *
  * @param {string} matchUrl        POST endpoint for server-side match confirmation
  * @param {string} modelPath       URL prefix for face-api.js model weights
@@ -197,6 +198,18 @@
  * @param {string} embeddingsUrl   GET endpoint returning all session embeddings
  */
 function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
+
+  // ── Auto-capture tuning constants ─────────────────────────────────────────
+  /** Milliseconds a face must remain stable before the shutter fires. */
+  const STABLE_HOLD_MS = 500;
+  /** Milliseconds the frame must be clear (no face) before resetting after a capture. */
+  const CLEAR_HOLD_MS = 500;
+  /**
+   * Maximum allowed movement of the face bounding-box centre (as a fraction of
+   * the video diagonal) between consecutive frames to be considered "stable".
+   */
+  const STABILITY_THRESHOLD = 0.04;
+
   return {
     // ── state ──────────────────────────────────────────────────────────────
     loading: true,
@@ -220,6 +233,70 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
 
     /** setInterval handle for session-state polling */
     _pollHandle: null,
+
+    // ── auto-capture state ─────────────────────────────────────────────────
+
+    /**
+     * Current auto-capture phase.
+     * @type {'ready'|'locking'|'processing'|'halted'}
+     *
+     * Use _setPhase() to change this so that the derived reactive properties
+     * (haltUntilClear, autoStatusText, autoStatusClass) stay in sync.
+     * Alpine.js does not observe ES getter properties, so we keep them as
+     * plain reactive data fields updated by the helper.
+     */
+    _autoPhase: 'ready',
+
+    /** Timestamp (ms) when the current stable-face window started. */
+    _stableSince: null,
+
+    /** Timestamp (ms) when the clear-frame window started. */
+    _clearSince: null,
+
+    /**
+     * Last detected face bounding-box centre, used for stability comparison.
+     * @type {{cx: number, cy: number}|null}
+     */
+    _lastCenter: null,
+
+    // ── reactive properties derived from _autoPhase ────────────────────────
+    // These are plain data fields kept in sync by _setPhase().
+
+    /** True while the kiosk should not accept a new auto-capture trigger. */
+    haltUntilClear: false,
+
+    /** Human-readable status label shown in the bottom pill. */
+    autoStatusText: '👤 มองกล้อง',
+
+    /** CSS modifier class for the bottom pill. */
+    autoStatusClass: 'auto-status-ready',
+
+    /**
+     * Update _autoPhase and keep all derived reactive properties in sync.
+     * Always call this instead of assigning _autoPhase directly.
+     * @param {'ready'|'locking'|'processing'|'halted'} phase
+     */
+    _setPhase(phase) {
+      this._autoPhase = phase;
+      this.haltUntilClear = phase === 'halted' || phase === 'processing';
+      switch (phase) {
+        case 'locking':
+          this.autoStatusText  = '🔒 กรุณานิ่ง…';
+          this.autoStatusClass = 'auto-status-locking';
+          break;
+        case 'processing':
+          this.autoStatusText  = '⏳ กำลังประมวลผล…';
+          this.autoStatusClass = 'auto-status-processing';
+          break;
+        case 'halted':
+          this.autoStatusText  = '✋ รอให้ออกจากกล้อง';
+          this.autoStatusClass = 'auto-status-halted';
+          break;
+        default: // 'ready'
+          this.autoStatusText  = '👤 มองกล้อง';
+          this.autoStatusClass = 'auto-status-ready';
+      }
+    },
 
     // ── lifecycle ──────────────────────────────────────────────────────────
 
@@ -285,7 +362,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
       }
     },
 
-    // ── face detection overlay (TASK-302) ──────────────────────────────────
+    // ── face detection overlay ─────────────────────────────────────────────
 
     _startOverlay() {
       const loop = async () => {
@@ -328,6 +405,8 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
       }
     },
 
+    // ── overlay drawing + auto-capture logic ──────────────────────────────
+
     async _drawOverlay() {
       const video = this.$refs.video;
       const overlayCanvas = this.$refs.overlay;
@@ -353,7 +432,81 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
       const detections = await faceapi
         .detectAllFaces(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }));
 
-      if (!detections || detections.length === 0) return;
+      const now = performance.now();
+      const hasFace = detections && detections.length > 0;
+
+      // ── Auto-capture state machine ─────────────────────────────────────
+      if (this._autoPhase === 'processing') {
+        // Actively processing a photo — do nothing until takePhoto() finishes.
+      } else if (this._autoPhase === 'halted') {
+        // Waiting for the frame to be clear before resetting.
+        if (!hasFace) {
+          if (this._clearSince === null) {
+            this._clearSince = now;
+          } else if (now - this._clearSince >= CLEAR_HOLD_MS) {
+            // Frame has been clear long enough — reset to ready.
+            this._setPhase('ready');
+            this._clearSince = null;
+            this._stableSince = null;
+            this._lastCenter = null;
+          }
+        } else {
+          // Face still present — reset the clear timer.
+          this._clearSince = null;
+        }
+      } else {
+        // Phases: 'ready' or 'locking'
+        if (!hasFace) {
+          // No face — reset stability tracking.
+          this._setPhase('ready');
+          this._stableSince = null;
+          this._lastCenter = null;
+          this._clearSince = null;
+        } else {
+          // Pick the largest (most prominent) face.
+          const primary = detections.reduce((best, d) =>
+            d.box.area > best.box.area ? d : best, detections[0]);
+          const box = primary.box;
+          const cx = box.x + box.width / 2;
+          const cy = box.y + box.height / 2;
+
+          // Compute movement relative to video diagonal.
+          const diagonal = Math.sqrt(vw * vw + vh * vh);
+          let isStable = true;
+          if (this._lastCenter !== null) {
+            const dx = cx - this._lastCenter.cx;
+            const dy = cy - this._lastCenter.cy;
+            const movement = Math.sqrt(dx * dx + dy * dy) / diagonal;
+            if (movement > STABILITY_THRESHOLD) {
+              isStable = false;
+            }
+          }
+          this._lastCenter = { cx, cy };
+
+          if (!isStable) {
+            // Face moved — restart the stability window.
+            this._setPhase('ready');
+            this._stableSince = null;
+          } else {
+            if (this._stableSince === null) {
+              this._stableSince = now;
+              this._setPhase('locking');
+            }
+            const elapsed = now - this._stableSince;
+            if (elapsed >= STABLE_HOLD_MS) {
+              // Face has been stable long enough — fire the shutter.
+              this._setPhase('processing');
+              this._stableSince = null;
+              this._lastCenter = null;
+              this._clearSince = null;
+              // Defer so the overlay frame finishes before the heavy work starts.
+              setTimeout(() => this.takePhoto(), 0);
+            }
+          }
+        }
+      }
+
+      if (!hasFace) return;
 
       // ── Compute the actual rendered video rect inside the element ──────────
       // object-fit: contain means the video is letterboxed/pillarboxed.
@@ -381,10 +534,19 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
       const scaleX = renderedW / vw;
       const scaleY = renderedH / vh;
 
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 3;
-      ctx.shadowColor = '#3b82f6';
-      ctx.shadowBlur = 8;
+      // ── Draw face bounding boxes ───────────────────────────────────────────
+      // Colour and glow change based on auto-capture phase.
+      const isLocking = this._autoPhase === 'locking';
+      const isHalted  = this._autoPhase === 'halted' || this._autoPhase === 'processing';
+
+      const boxColour = isHalted  ? '#f59e0b'   // amber — halted
+                      : isLocking ? '#22c55e'   // green — locking on
+                      :             '#3b82f6';  // blue  — ready/watching
+
+      ctx.strokeStyle = boxColour;
+      ctx.lineWidth = isLocking ? 4 : 3;
+      ctx.shadowColor = boxColour;
+      ctx.shadowBlur = isLocking ? 16 : 8;
 
       for (const det of detections) {
         const box = det.box;
@@ -396,6 +558,42 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         const h = box.height * scaleY;
 
         ctx.strokeRect(x, y, w, h);
+      }
+
+      // ── Draw stability progress arc on the primary face box ───────────────
+      if (isLocking && this._stableSince !== null) {
+        const now2 = performance.now();
+        const progress = Math.min((now2 - this._stableSince) / STABLE_HOLD_MS, 1);
+
+        const primary = detections.reduce((best, d) =>
+          d.box.area > best.box.area ? d : best, detections[0]);
+        const pb = primary.box;
+        const px = offsetX + pb.x * scaleX;
+        const py = offsetY + pb.y * scaleY;
+        const pw = pb.width * scaleX;
+        const ph = pb.height * scaleY;
+
+        // Draw a progress arc centred on the top-centre of the box.
+        const arcCx = px + pw / 2;
+        const arcCy = py - 18;
+        const arcR  = 14;
+
+        // Background circle
+        ctx.beginPath();
+        ctx.arc(arcCx, arcCy, arcR, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 0;
+        ctx.stroke();
+
+        // Progress arc (clockwise from top)
+        ctx.beginPath();
+        ctx.arc(arcCx, arcCy, arcR, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#22c55e';
+        ctx.shadowBlur = 10;
+        ctx.stroke();
       }
     },
 
@@ -444,6 +642,11 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
     async takePhoto() {
       if (this.processing) return;
       this.processing = true;
+      // Ensure the phase reflects that we are now processing, regardless of
+      // whether this was triggered automatically or by the manual button.
+      if (this._autoPhase !== 'processing') {
+        this._setPhase('processing');
+      }
       this.message = '';
 
       const video = this.$refs.video;
@@ -461,8 +664,10 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         .withFaceDescriptor();
 
       if (!detection) {
-        this.showMessage('No face detected. Please try again.', 'warning');
+        this.showMessage('ไม่พบใบหน้าในรูป', 'warning');
         this.processing = false;
+        this._setPhase('halted');
+        this._clearSince = null;
         return;
       }
 
@@ -479,6 +684,8 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
           // Client-side says no match — skip server round-trip
           this.showMessage('Face not recognised. Please try again or contact staff.', 'error');
           this.processing = false;
+          this._setPhase('halted');
+          this._clearSince = null;
           this._scheduleMessageClear();
           return;
         }
@@ -508,12 +715,12 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
 
           if (data.matched) {
             if (data.already_checked_in) {
-              this.showMessage(`Welcome back, ${data.face.name}! You have already checked in.`, 'warning');
+              this.showMessage(`${data.face.name} เช็กอินไปก่อนหน้านี้แล้ว`, 'warning');
             } else {
-              this.showMessage(`✅ Welcome, ${data.face.name}! Check-in successful.`, 'success');
+              this.showMessage(`✅ ${data.face.name} เช็กอินสำเร็จ`, 'success');
             }
           } else {
-            this.showMessage('Face not recognised. Please try again or contact staff.', 'error');
+            this.showMessage('ไม่พบใบหน้า', 'error');
           }
         }
       } catch (err) {
@@ -522,6 +729,10 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
       }
 
       this.processing = false;
+      // Enter halted phase — wait for the person to step away before
+      // the kiosk is ready for the next participant.
+      this._setPhase('halted');
+      this._clearSince = null;
       this._scheduleMessageClear();
     },
 

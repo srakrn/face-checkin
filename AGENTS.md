@@ -108,6 +108,7 @@ Draft ──activate()──▶ Active ──close()──▶ Closed
 | `DATABASE_URL` | SQLite | dj-database-url connection string |
 | `USE_S3` | `False` | Use Backblaze B2 for file storage |
 | `AWS_*` | — | B2 credentials (when `USE_S3=True`) |
+| `TIME_ZONE` | `UTC` | IANA timezone name for admin/template display |
 | `FACE_MATCH_THRESHOLD` | `0.6` | Cosine similarity threshold |
 
 Copy `.env.example` → `.env` and fill in values before running.
