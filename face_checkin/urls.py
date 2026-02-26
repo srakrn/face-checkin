@@ -10,6 +10,7 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("apps.checkin.urls")),
+    path("faces/", include("apps.faces.urls")),
     path("sessions/", include("apps.sessions.urls")),
     path("", include("apps.checkin.kiosk_urls")),
 ]

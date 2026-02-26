@@ -45,12 +45,12 @@ Legend: `[ ]` pending · `[-]` in progress · `[x]` done
 
 ## Phase 2 — Face enrollment UI (admin + webcam)
 
-- [ ] **TASK-201** Add webcam capture widget to the Face admin change form
+- [x] **TASK-201** Add webcam capture widget to the Face admin change form
   - Files: `apps/faces/admin.py`, `templates/admin/faces/face/change_form.html`, `static/js/webcam_capture.js`
   - Acceptance: Admin can open a face record, click "Capture from webcam", take a photo, and it populates the `photo` field
   - Notes: Use `getUserMedia`, draw to canvas, convert to base64, POST to a dedicated upload endpoint
 
-- [ ] **TASK-202** Create face enrollment endpoint that accepts a photo, runs face detection client-side (face-api.js), and saves the embedding
+- [x] **TASK-202** Create face enrollment endpoint that accepts a photo, runs face detection client-side (face-api.js), and saves the embedding
   - Files: `apps/faces/views.py`, `apps/faces/urls.py`
   - Acceptance: `POST /faces/<pk>/enroll/` with a photo file → extracts embedding via face-api.js in browser → saves `Face.embedding`
   - Notes: Embedding extraction happens in the browser; the server receives the embedding as a JSON array alongside the photo

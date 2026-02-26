@@ -1,0 +1,32 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {# Expose the enroll URL and face-api models URL to the JS widget #}
+  <script>
+    {% if original and original.pk %}
+      window.FACE_ENROLL_URL = "{% url 'faces:enroll' original.pk %}";
+    {% else %}
+      window.FACE_ENROLL_URL = null;  // new record — no pk yet
+    {% endif %}
+    window.FACE_API_MODELS_URL = "{% static 'js/face-api/models' %}";
+  </script>
+  {#
+    face-api.js — loaded via a dynamic script tag so that a missing bundle
+    (large binary, not committed to git) causes a silent onerror rather than
+    a hard 404 that blocks the rest of the page.
+  #}
+  <script>
+    (function () {
+      var s = document.createElement("script");
+      s.src = "{% static 'js/face-api/face-api.min.js' %}";
+      s.onerror = function () {
+        console.warn("face-api.js not found — webcam embedding extraction will be skipped.");
+      };
+      document.head.appendChild(s);
+    })();
+  </script>
+  {# Webcam capture widget — must come after the face-api.js tag above #}
+  <script src="{% static 'js/webcam_capture.js' %}"></script>
+{% endblock %}
