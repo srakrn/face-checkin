@@ -3,8 +3,7 @@ Kiosk HTML view — renders the check-in page for a given session.
 The page uses AlpineJS + face-api.js for on-device face capture.
 
 Session state is passed to the template so the kiosk can display
-appropriate error panels for draft / closed / not-found sessions
-(TASK-303).
+appropriate error panels for closed / not-found sessions.
 """
 
 from django.shortcuts import render
@@ -18,7 +17,7 @@ def kiosk(request, session_id: int):
 
     Template context:
         session        — Session instance (or None if not found)
-        session_state  — one of: "active" | "draft" | "closed" | "not_found"
+        session_state  — one of: "active" | "closed" | "not_found"
     """
     try:
         session = Session.objects.get(pk=session_id)
@@ -31,7 +30,6 @@ def kiosk(request, session_id: int):
 
     state_map = {
         Session.State.ACTIVE: "active",
-        Session.State.DRAFT: "draft",
         Session.State.CLOSED: "closed",
     }
     session_state = state_map.get(session.state, "closed")

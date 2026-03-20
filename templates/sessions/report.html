@@ -35,12 +35,10 @@
         <div class="report-meta-item">
           <span class="label">State</span>
           <span class="value">
-            {% if session.state == "draft" %}
-              <span class="badge badge-draft">Draft</span>
-            {% elif session.state == "active" %}
-              <span class="badge badge-active">Active</span>
+            {% if session.state == "active" %}
+              <span class="badge badge-active">เปิดให้เช็คอิน</span>
             {% else %}
-              <span class="badge badge-closed">Closed</span>
+              <span class="badge badge-closed">ปิดไม่ให้เช็คอิน</span>
             {% endif %}
           </span>
         </div>

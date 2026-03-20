@@ -10,7 +10,6 @@ urlpatterns = [
     # Session management UI
     path("", views.session_list, name="index"),
     path("classes/<int:class_pk>/", views.class_session_list, name="class_session_list"),
-    path("<int:pk>/activate/", views.session_activate, name="activate"),
     path("<int:pk>/close/", views.session_close, name="close"),
     path("<int:pk>/report/", views.session_report_page, name="report_page"),
     path("<int:pk>/report/csv/", views.session_report_csv, name="report_csv"),

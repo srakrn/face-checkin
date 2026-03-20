@@ -8,9 +8,8 @@ class Session(models.Model):
     """A check-in slot within a class."""
 
     class State(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        ACTIVE = "active", "Active"
-        CLOSED = "closed", "Closed"
+        ACTIVE = "active", "เปิดให้เช็คอิน"
+        CLOSED = "closed", "ปิดไม่ให้เช็คอิน"
 
     klass = models.ForeignKey(
         Class,
@@ -23,7 +22,7 @@ class Session(models.Model):
     state = models.CharField(
         max_length=10,
         choices=State.choices,
-        default=State.DRAFT,
+        default=State.ACTIVE,
         verbose_name="สถานะ",
     )
     scheduled_at = models.DateTimeField(
@@ -53,10 +52,10 @@ class Session(models.Model):
     # State transition helpers
     # ------------------------------------------------------------------
 
-    def activate(self) -> None:
-        """Transition Draft → Active."""
-        if self.state != self.State.DRAFT:
-            raise ValueError(f"Cannot activate a session in state '{self.state}'.")
+    def open(self) -> None:
+        """Transition Closed → Active."""
+        if self.state != self.State.CLOSED:
+            raise ValueError(f"Cannot open a session in state '{self.state}'.")
         self.state = self.State.ACTIVE
         self.save(update_fields=["state", "updated_at"])
 
@@ -66,6 +65,18 @@ class Session(models.Model):
             raise ValueError(f"Cannot close a session in state '{self.state}'.")
         self.state = self.State.CLOSED
         self.save(update_fields=["state", "updated_at"])
+
+    @property
+    def should_auto_open(self) -> bool:
+        """Return True if the session should be auto-opened right now.
+
+        A closed session with a scheduled_at in the past should be re-opened.
+        """
+        return (
+            self.state == self.State.CLOSED
+            and self.scheduled_at is not None
+            and timezone.now() >= self.scheduled_at
+        )
 
     @property
     def should_auto_close(self) -> bool:

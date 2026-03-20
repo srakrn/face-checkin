@@ -11,7 +11,7 @@ class SessionAdmin(admin.ModelAdmin):
     list_filter = ("state", "klass__face_group")
     search_fields = ("name", "klass__name")
     readonly_fields = ("created_at", "updated_at", "report_link")
-    actions = ["activate_sessions", "close_sessions"]
+    actions = ["close_sessions"]
     fieldsets = (
         (None, {
             "fields": ("klass", "name", "state"),
@@ -56,18 +56,7 @@ class SessionAdmin(admin.ModelAdmin):
             obj.name,
         )
 
-    @admin.action(description="เปิดใช้งานคาบเรียนที่เลือก (ร่าง → เปิดใช้งาน)")
-    def activate_sessions(self, request, queryset):
-        count = 0
-        for session in queryset.filter(state=Session.State.DRAFT):
-            try:
-                session.activate()
-                count += 1
-            except ValueError:
-                pass
-        self.message_user(request, f"เปิดใช้งาน {count} คาบเรียน")
-
-    @admin.action(description="ปิดคาบเรียนที่เลือก (เปิดใช้งาน → ปิด)")
+    @admin.action(description="ปิดคาบเรียนที่เลือก (เปิดให้เช็คอิน → ปิดไม่ให้เช็คอิน)")
     def close_sessions(self, request, queryset):
         count = 0
         for session in queryset.filter(state=Session.State.ACTIVE):

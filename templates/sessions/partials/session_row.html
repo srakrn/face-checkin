@@ -11,30 +11,17 @@
     {% endif %}
   </td>
   <td>
-    {% if session.state == "draft" %}
-      <span class="badge badge-draft">Draft</span>
-    {% elif session.state == "active" %}
-      <span class="badge badge-active">Active</span>
+    {% if session.state == "active" %}
+      <span class="badge badge-active">เปิดให้เช็คอิน</span>
     {% else %}
-      <span class="badge badge-closed">Closed</span>
+      <span class="badge badge-closed">ปิดไม่ให้เช็คอิน</span>
     {% endif %}
   </td>
   <td>{{ session.scheduled_at|default:"—" }}</td>
   <td>{{ session.auto_close_at|default:"—" }}</td>
   <td>
     <div class="action-cell">
-      {% if session.state == "draft" %}
-        <button
-          class="btn btn-success btn-sm"
-          hx-post="{% url 'sessions:activate' session.pk %}"
-          hx-target="#session-row-{{ session.pk }}"
-          hx-swap="outerHTML"
-          hx-indicator="#global-indicator"
-          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
-        >
-          ▶ Activate
-        </button>
-      {% elif session.state == "active" %}
+      {% if session.state == "active" %}
         <button
           class="btn btn-danger btn-sm"
           hx-post="{% url 'sessions:close' session.pk %}"
@@ -43,7 +30,7 @@
           hx-indicator="#global-indicator"
           hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
         >
-          ■ Close
+          ■ ปิดการเช็คอิน
         </button>
       {% endif %}
       <a href="{% url 'sessions:report_page' session.pk %}" class="btn btn-outline btn-sm">

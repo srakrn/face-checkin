@@ -90,19 +90,6 @@ def session_list(request):
 
 @login_required
 @require_POST
-def session_activate(request, pk: int):
-    """POST /sessions/<pk>/activate/ — activate a draft session (HTMX)."""
-    session = get_object_or_404(Session, pk=pk)
-    try:
-        session.activate()
-    except ValueError as exc:
-        return HttpResponse(str(exc), status=400)
-    # Return the updated session row partial
-    return render(request, "sessions/partials/session_row.html", {"session": session})
-
-
-@login_required
-@require_POST
 def session_close(request, pk: int):
     """POST /sessions/<pk>/close/ — close an active session (HTMX)."""
     session = get_object_or_404(Session, pk=pk)

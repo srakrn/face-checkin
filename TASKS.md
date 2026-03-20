@@ -94,23 +94,23 @@ Legend: `[ ]` pending · `[-]` in progress · `[x]` done
 
 ## Phase 5 — Testing
 
-- [ ] **TASK-501** Write unit tests for `apps/checkin/matching.py`
+- [x] **TASK-501** Write unit tests for `apps/checkin/matching.py`
   - Files: `apps/checkin/tests/test_matching.py`
   - Acceptance: Tests cover: exact match, no match (below threshold), empty face group, zero-norm vector edge case
 
-- [ ] **TASK-502** Write unit tests for `Session` state machine
+- [x] **TASK-502** Write unit tests for `Session` state machine
   - Files: `apps/sessions/tests/test_models.py`
   - Acceptance: Tests cover: valid transitions (draft→active, active→closed), invalid transitions raise `ValueError`, `should_auto_close` property
 
-- [ ] **TASK-503** Write integration tests for `POST /api/checkin/match/`
+- [x] **TASK-503** Write integration tests for `POST /api/checkin/match/`
   - Files: `apps/checkin/tests/test_views.py`
   - Acceptance: Tests cover: matched check-in, unmatched check-in, duplicate check-in, inactive session rejection, missing fields
 
-- [ ] **TASK-504** Write integration tests for session API views
+- [x] **TASK-504** Write integration tests for session API views
   - Files: `apps/sessions/tests/test_views.py`
   - Acceptance: Tests cover: `session_detail` returns correct JSON, `session_report` lists all check-ins
 
-- [ ] **TASK-505** Write tests for `auto_close_sessions` management command
+- [x] **TASK-505** Write tests for `auto_close_sessions` management command
   - Files: `apps/sessions/tests/test_commands.py`
   - Acceptance: Command closes sessions past `auto_close_at`; does not close sessions before `auto_close_at`; does not touch draft/closed sessions
 
