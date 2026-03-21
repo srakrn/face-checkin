@@ -37,7 +37,7 @@ Legend: `[ ]` pending · `[-]` in progress · `[x]` done
 
 ## Phase 1 — Migrations & initial data
 
-- [ ] **TASK-101** Run `python manage.py makemigrations` for all apps and commit migration files
+- [x] **TASK-101** Run `python manage.py makemigrations` for all apps and commit migration files
   - Files: `apps/faces/migrations/`, `apps/classes/migrations/`, `apps/sessions/migrations/`, `apps/checkin/migrations/`
   - Acceptance: `python manage.py migrate` runs without errors on a fresh SQLite DB
 
@@ -118,18 +118,18 @@ Legend: `[ ]` pending · `[-]` in progress · `[x]` done
 
 ## Phase 6 — Deployment hardening
 
-- [ ] **TASK-601** Add `python manage.py migrate` to Docker entrypoint / startup script
-  - Files: `Dockerfile` or a new `docker/entrypoint.sh`
+- [x] **TASK-601** Add `python manage.py migrate` to Docker entrypoint / startup script
+  - Files: `Dockerfile`, `docker/entrypoint.sh`
   - Acceptance: Container runs migrations automatically on startup before gunicorn starts
 
-- [ ] **TASK-602** Configure periodic `auto_close_sessions` execution inside Docker
-  - Files: `docker-compose.yml` or a new `docker/cron` service
+- [x] **TASK-602** Configure periodic `auto_close_sessions` execution inside Docker
+  - Files: `docker-compose.yml`, `docker/scheduler.sh`
   - Acceptance: `auto_close_sessions` runs every minute inside the container
 
-- [ ] **TASK-603** Add health-check endpoint
-  - Files: `face_checkin/urls.py`, a simple view returning `{"status": "ok"}`
+- [x] **TASK-603** Add health-check endpoint
+  - Files: `face_checkin/urls.py`, `docker-compose.yml`
   - Acceptance: `GET /health/` returns HTTP 200 with `{"status": "ok"}`; Docker Compose `healthcheck` uses it
 
-- [ ] **TASK-604** Document production deployment steps in `README.md`
+- [x] **TASK-604** Document production deployment steps in `README.md`
   - Files: `README.md` (create)
   - Acceptance: README covers: prerequisites, `.env` setup, Docker Compose commands, first-run superuser creation, face-api.js model download instructions

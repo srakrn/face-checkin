@@ -7,10 +7,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (including curl for health checks)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -19,6 +20,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project
 COPY . .
+
+# Copy Docker scripts
+COPY docker/entrypoint.sh /app/entrypoint.sh
+COPY docker/scheduler.sh /app/scheduler.sh
+RUN chmod +x /app/entrypoint.sh /app/scheduler.sh
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
@@ -29,9 +35,4 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["gunicorn", "face_checkin.wsgi:application", \
-     "--bind", "0.0.0.0:8000", \
-     "--workers", "4", \
-     "--timeout", "120", \
-     "--access-logfile", "-", \
-     "--error-logfile", "-"]
+CMD ["/app/entrypoint.sh"]
