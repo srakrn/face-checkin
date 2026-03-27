@@ -17,7 +17,7 @@ A Django web application for face-based attendance check-in with time logging.
 - **Frontend**: AlpineJS + HTMX, served via Django templates
 - **Face Recognition**: face-api.js (TensorFlow.js-based)
 - **Database**: SQLite (development) or PostgreSQL (production)
-- **Reverse Proxy**: Caddy
+- **Tunnel**: Cloudflare cloudflared (provides HTTPS)
 - **Deployment**: Docker & Docker Compose
 
 ## Quick Start (Development)
@@ -117,9 +117,9 @@ The application supports two profiles:
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐  │
-│  │   Caddy      │───▶│   Django     │    │  Scheduler   │  │
-│  │ (Reverse     │    │   (Gunicorn) │    │  (Session    │  │
-│  │  Proxy)      │    │              │    │   Manager)   │  │
+│  │   Cloudflared│───▶│   Django     │    │  Scheduler   │  │
+│  │   (Tunnel)   │    │   (Gunicorn) │    │  (Session    │  │
+│  │              │    │              │    │   Manager)   │  │
 │  └──────────────┘    └──────┬───────┘    └──────────────┘  │
 │                            │                                │
 │                    ┌───────┴───────┐                      │
@@ -128,6 +128,107 @@ The application supports two profiles:
 │                    └─────────────────┘                    │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
+```
+
+## Cloudflare Tunnel Setup
+
+Cloudflare tunnels provide HTTPS for your self-hosted application without exposing ports or configuring SSL certificates.
+
+### Option 1: Named Tunnel (Recommended for Production)
+
+1. **Install cloudflared**
+   ```bash
+   # macOS
+   brew install cloudflare/cloudflare/cloudflared
+   
+   # Linux
+   curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+   chmod +x cloudflared
+   ```
+
+2. **Create a tunnel**
+   ```bash
+   cloudflared tunnel create face-checkin
+   ```
+
+3. **Configure the tunnel**
+
+   **If running cloudflared locally (outside Docker):**
+   ```bash
+   # Create a config file at ~/.cloudflared/config.yml
+   tunnel: <your-tunnel-uuid>
+   credentials-file: /root/.cloudflared/<your-tunnel-uuid>.json
+   
+   ingress:
+     - hostname: schimudtcheck.srakrn.me
+       service: http://localhost:8000
+     - service: http_status:404
+   ```
+
+   **If running cloudflared inside Docker (as in this project's setup):**
+   Cloudflared runs as `cloudflared_sqlite` or `cloudflared_postgres` service and connects to Django via the Docker network. The service name is already configured in `docker-compose.yml`:
+   - For SQLite profile: connects to `http://django_sqlite:8000`
+   - For PostgreSQL profile: connects to `http://django_postgres:8000`
+
+4. **Route the tunnel to your domain**
+   ```bash
+   cloudflared tunnel route dns face-checkin schimudtcheck.srakrn.me
+   ```
+
+5. **Get the tunnel token** and add it to your `.env` file:
+   ```bash
+   TUNNEL_TOKEN=<your-tunnel-token>
+   ```
+
+6. **Run with Docker**
+   ```bash
+   docker compose --profile sqlite up --build
+   ```
+
+### Option 2: Cloudflare Zero Trust (Quick Tunnel)
+
+For quick testing without a domain:
+
+1. **Run cloudflared directly**
+   ```bash
+   cloudflared tunnel --url http://localhost:8000
+   ```
+
+2. **Use the provided HTTPS URL** (temporary, changes on restart)
+
+### Important: Django Settings Behind Cloudflare
+
+The application is configured to work behind Cloudflare with these settings in `face_checkin/settings/production.py`:
+
+```python
+# Trust the proxy (Cloudflared) for the original protocol
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+```
+
+You must also add your domain to `CSRF_TRUSTED_ORIGINS` in your `.env` file:
+
+```bash
+CSRF_TRUSTED_ORIGINS=https://schimudtcheck.srakrn.me
+```
+
+For multiple domains, comma-separate them:
+```bash
+CSRF_TRUSTED_ORIGINS=https://example.com,https://www.example.com
+```
+
+### Troubleshooting Cloudflare Tunnel
+
+1. **Redirect loop errors**: Ensure `CSRF_TRUSTED_ORIGINS` includes your domain
+2. **Tunnel won't connect**: Check that the tunnel token is correct in `.env`
+3. **Health check fails**: Ensure Django is running and responding on port 8000
+
+```bash
+# Check tunnel logs
+docker compose logs cloudflared_sqlite
+
+# Check Django logs
+docker compose logs django_sqlite
 ```
 
 ## Configuration Reference
@@ -144,6 +245,7 @@ The application supports two profiles:
 | `AWS_*` | — | B2 credentials (when `USE_S3=True`) |
 | `TIME_ZONE` | `UTC` | IANA timezone for admin/template display |
 | `FACE_MATCH_THRESHOLD` | `0.6` | Cosine similarity threshold (0.0-1.0) |
+| `CSRF_TRUSTED_ORIGINS` | (none) | Comma-separated HTTPS origins for CSRF (e.g., `https://example.com`) |
 
 ### Example `.env` for Production
 
@@ -164,6 +266,9 @@ TIME_ZONE=Asia/Bangkok
 
 # Face Matching
 FACE_MATCH_THRESHOLD=0.6
+
+# CSRF (required when behind Cloudflare or reverse proxy)
+CSRF_TRUSTED_ORIGINS=https://yourdomain.com
 ```
 
 ### Face Matching Threshold Tuning
