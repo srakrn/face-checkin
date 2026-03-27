@@ -4,12 +4,20 @@ version: "3.9"
 # Face Check-in — Docker Compose
 #
 # Profiles:
-#   sqlite   (default) — Django + Caddy, SQLite on a persistent volume
-#   postgres           — Django + Caddy + PostgreSQL
+#   sqlite   (default) — Django + cloudflared, SQLite on a persistent volume
+#   postgres           — Django + cloudflared + PostgreSQL
+#   local              — Django only (no tunnel, for local development)
 #
 # Usage:
 #   docker compose --profile sqlite up
 #   docker compose --profile postgres up
+#   docker compose --profile local up  # For local development
+#
+# Cloudflare Setup:
+#   1. Install cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/tunnel-guide/
+#   2. Create a tunnel: cloudflared tunnel create <name>
+#   3. Add a domain or use the quick tunnel method
+#   4. Set TUNNEL_TOKEN in .env file
 # ─────────────────────────────────────────────────────────────────────────────
 
 x-django-common: &django-common
@@ -24,7 +32,7 @@ services:
   # ── Django (SQLite profile) ────────────────────────────────────────────────
   django_sqlite:
     <<: *django-common
-    profiles: [sqlite]
+    profiles: [sqlite, local]
     environment:
       DATABASE_URL: "sqlite:////data/db.sqlite3"
     volumes:
@@ -73,7 +81,7 @@ services:
   # ── Scheduler (SQLite profile) ──────────────────────────────────────────────
   scheduler_sqlite:
     <<: *django-common
-    profiles: [sqlite]
+    profiles: [sqlite, local]
     environment:
       DATABASE_URL: "sqlite:////data/db.sqlite3"
       SCHEDULE_INTERVAL: "60"
@@ -99,33 +107,25 @@ services:
       django_postgres:
         condition: service_started
 
-  # ── Caddy (SQLite profile) ─────────────────────────────────────────────────
-  caddy_sqlite:
-    image: caddy:2-alpine
+  # ── cloudflared tunnel (SQLite profile) ───────────────────────────────────
+  cloudflared_sqlite:
+    image: cloudflare/cloudflared:latest
     profiles: [sqlite]
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
     depends_on:
       - django_sqlite
 
-  # ── Caddy (PostgreSQL profile) ─────────────────────────────────────────────
-  caddy_postgres:
-    image: caddy:2-alpine
+  # ── cloudflared tunnel (PostgreSQL profile) ───────────────────────────────
+  cloudflared_postgres:
+    image: cloudflare/cloudflared:latest
     profiles: [postgres]
     restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
     depends_on:
       - django_postgres
 
@@ -133,5 +133,3 @@ volumes:
   sqlite_data:
   postgres_data:
   media_data:
-  caddy_data:
-  caddy_config:
