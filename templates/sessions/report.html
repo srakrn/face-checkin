@@ -18,9 +18,21 @@
       <div class="text-muted small">{% trans "วิชา" %}: {{ session.klass.name }}</div>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-      <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-primary btn-sm">
-        ⬇ {% trans "ดาวน์โหลด CSV" %}
-      </a>
+      {% if unique_only %}
+        <a href="{% url 'sessions:report_csv' session.pk %}?unique=1" class="btn btn-primary btn-sm">
+          ⬇ {% trans "ดาวน์โหลด CSV" %}
+        </a>
+        <a href="{% url 'sessions:report' session.pk %}" class="btn btn-outline-secondary btn-sm">
+          {% trans "แสดงทั้งหมด" %}
+        </a>
+      {% else %}
+        <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-primary btn-sm">
+          ⬇ {% trans "ดาวน์โหลด CSV" %}
+        </a>
+        <a href="{% url 'sessions:report' session.pk %}?unique=1" class="btn btn-outline-info btn-sm">
+          👤 {% trans "แสดงเฉพาะที่ไม่ซ้ำ" %}
+        </a>
+      {% endif %}
       <a href="{% url 'sessions:class_session_list' session.klass.pk %}" class="btn btn-outline-secondary btn-sm">
         ← {% trans "กลับไปรายการคาบเรียน" %}
       </a>
@@ -92,8 +104,17 @@
   {# ---- Check-in table ---- #}
   <div class="card shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center">
-      <h2 class="h5 mb-0">{% trans "ประวัติการเช็กอิน" %}</h2>
-      <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-outline-secondary btn-sm">⬇ CSV</a>
+      <h2 class="h5 mb-0">
+        {% trans "ประวัติการเช็กอิน" %}
+        {% if unique_only %}
+          <span class="badge text-bg-info ms-2">👤 {% trans "เฉพาะคนแรก" %}</span>
+        {% endif %}
+      </h2>
+      {% if unique_only %}
+        <a href="{% url 'sessions:report_csv' session.pk %}?unique=1" class="btn btn-outline-secondary btn-sm">⬇ CSV</a>
+      {% else %}
+        <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-outline-secondary btn-sm">⬇ CSV</a>
+      {% endif %}
     </div>
     {% if checkins %}
       <div class="table-responsive">

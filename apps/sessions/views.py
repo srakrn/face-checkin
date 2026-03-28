@@ -102,11 +102,26 @@ def session_close(request, pk: int):
     return render(request, "sessions/partials/session_row.html", {"session": session})
 
 
+def _deduplicate_checkins(checkins):
+    """Return only the first check-in per face (by face_id), preserving order."""
+    seen = set()
+    result = []
+    for c in checkins:
+        key = c.face_id  # None groups all unmatched together — keep them all
+        if key is None or key not in seen:
+            result.append(c)
+            if key is not None:
+                seen.add(key)
+    return result
+
+
 @login_required
 def session_report_page(request, pk: int):
     """GET /sessions/<pk>/report/ — HTML report page for a session."""
     session = get_object_or_404(Session, pk=pk)
-    checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
+    unique_only = request.GET.get("unique") == "1"
+    all_checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
+    checkins = _deduplicate_checkins(all_checkins) if unique_only else all_checkins
     matched_count = sum(1 for c in checkins if c.matched)
     unmatched_count = len(checkins) - matched_count
     anomalies = detect_anomalies(checkins)
@@ -123,6 +138,8 @@ def session_report_page(request, pk: int):
             "matched_count": matched_count,
             "unmatched_count": unmatched_count,
             "anomaly_count": anomaly_count,
+            "unique_only": unique_only,
+            "total_checkin_count": len(all_checkins),
         },
     )
 
@@ -131,7 +148,9 @@ def session_report_page(request, pk: int):
 def session_report_csv(request, pk: int):
     """GET /sessions/<pk>/report/csv/ — download check-in report as CSV."""
     session = get_object_or_404(Session, pk=pk)
-    checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
+    unique_only = request.GET.get("unique") == "1"
+    all_checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
+    checkins = _deduplicate_checkins(all_checkins) if unique_only else all_checkins
     anomalies = detect_anomalies(checkins)
 
     response = HttpResponse(content_type="text/csv")
