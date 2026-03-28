@@ -4,34 +4,32 @@
 {% block title %}{{ klass.name }} — {% trans "คาบเรียน" %} — {% trans "ระบบเช็กอินด้วยใบหน้า" %}{% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
-  <div class="breadcrumb">
-    <a href="{% url 'sessions:index' %}">{% trans "จัดการคาบเรียน" %}</a> /
-    {{ klass.name }}
-  </div>
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'sessions:index' %}">{% trans "จัดการคาบเรียน" %}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ klass.name }}</li>
+    </ol>
+  </nav>
 
-  <div class="page-header">
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
-      <h1>{{ klass.name }}</h1>
-      <div style="color: var(--color-muted); font-size: 0.875rem;">
-        {% trans "กลุ่มใบหน้า" %}: {{ klass.face_group.name }}
-      </div>
+      <h1 class="h3 mb-1">{{ klass.name }}</h1>
+      <div class="text-muted small">{% trans "กลุ่มใบหน้า" %}: {{ klass.face_group.name }}</div>
     </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <div class="d-flex gap-2 flex-wrap">
       <a href="{% url 'admin:checkin_sessions_session_add' %}" class="btn btn-primary btn-sm">+ {% trans "คาบเรียนใหม่" %}</a>
-      <a href="{% url 'sessions:index' %}" class="btn btn-outline btn-sm">← {% trans "รายวิชาทั้งหมด" %}</a>
+      <a href="{% url 'sessions:index' %}" class="btn btn-outline-secondary btn-sm">← {% trans "รายวิชาทั้งหมด" %}</a>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-header">
-      <h2>{% trans "คาบเรียน" %}</h2>
-      <span class="htmx-indicator" id="global-indicator">{% trans "กำลังอัปเดต…" %}</span>
+  <div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">{% trans "คาบเรียน" %}</h2>
+      <span class="htmx-indicator text-muted small" id="global-indicator">{% trans "กำลังอัปเดต…" %}</span>
     </div>
 
-    <div class="table-wrapper" id="session-table">
+    <div id="session-table">
       {% include "sessions/partials/session_table.html" %}
     </div>
   </div>
-</div>
 {% endblock %}

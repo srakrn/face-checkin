@@ -4,86 +4,91 @@
 {% block title %}{% trans "รายงาน" %}: {{ session.name }} - {% trans "ระบบเช็กอินด้วยใบหน้า" %}{% endblock %}
 
 {% block content %}
-<div class="page-wrapper">
-  <div class="breadcrumb">
-    <a href="{% url 'sessions:index' %}">{% trans "รายวิชาทั้งหมด" %}</a> /
-    <a href="{% url 'sessions:class_session_list' session.klass.pk %}">{{ session.klass.name }}</a> /
-    {% trans "รายงาน" %}
-  </div>
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'sessions:index' %}">{% trans "รายวิชาทั้งหมด" %}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'sessions:class_session_list' session.klass.pk %}">{{ session.klass.name }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans "รายงาน" %}</li>
+    </ol>
+  </nav>
 
-  <div class="page-header">
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
-      <h1>{{ session.name }}</h1>
-      <div style="color: var(--color-muted); font-size: 0.875rem;">
-        {% trans "วิชา" %}: {{ session.klass.name }}
-      </div>
+      <h1 class="h3 mb-1">{{ session.name }}</h1>
+      <div class="text-muted small">{% trans "วิชา" %}: {{ session.klass.name }}</div>
     </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <div class="d-flex gap-2 flex-wrap">
       <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-primary btn-sm">
         ⬇ {% trans "ดาวน์โหลด CSV" %}
       </a>
-      <a href="{% url 'sessions:class_session_list' session.klass.pk %}" class="btn btn-outline btn-sm">
+      <a href="{% url 'sessions:class_session_list' session.klass.pk %}" class="btn btn-outline-secondary btn-sm">
         ← {% trans "กลับไปรายการคาบเรียน" %}
       </a>
     </div>
   </div>
 
   {# ---- Meta info ---- #}
-  <div class="card">
+  <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <div class="report-meta">
-        <div class="report-meta-item">
-          <span class="label">{% trans "สถานะ" %}</span>
-          <span class="value">
-            {% if session.state == "active" %}
-              <span class="badge badge-active">{% trans "เปิดให้เช็กอิน" %}</span>
-            {% else %}
-              <span class="badge badge-closed">{% trans "ปิดไม่ให้เช็กอิน" %}</span>
-            {% endif %}
-          </span>
-        </div>
+      <dl class="row mb-3">
+        <dt class="col-sm-3">{% trans "สถานะ" %}</dt>
+        <dd class="col-sm-9">
+          {% if session.state == "active" %}
+            <span class="badge text-bg-success">{% trans "เปิดให้เช็กอิน" %}</span>
+          {% else %}
+            <span class="badge text-bg-secondary">{% trans "ปิดไม่ให้เช็กอิน" %}</span>
+          {% endif %}
+        </dd>
         {% if session.scheduled_at %}
-          <div class="report-meta-item">
-            <span class="label">{% trans "เวลาเริ่มต้น" %}</span>
-            <span class="value">{{ session.scheduled_at }}</span>
-          </div>
+          <dt class="col-sm-3">{% trans "เวลาเริ่มต้น" %}</dt>
+          <dd class="col-sm-9">{{ session.scheduled_at }}</dd>
         {% endif %}
         {% if session.auto_close_at %}
-          <div class="report-meta-item">
-            <span class="label">{% trans "ปิดอัตโนมัติเมื่อ" %}</span>
-            <span class="value">{{ session.auto_close_at }}</span>
-          </div>
+          <dt class="col-sm-3">{% trans "ปิดอัตโนมัติเมื่อ" %}</dt>
+          <dd class="col-sm-9">{{ session.auto_close_at }}</dd>
         {% endif %}
-      </div>
+      </dl>
 
       {# ---- Stats ---- #}
-      <div class="stat-row">
-        <div class="stat-box">
-          <div class="stat-value">{{ checkins|length }}</div>
-          <div class="stat-label">{% trans "จำนวนการเช็กอิน" %}</div>
+      <div class="row g-3">
+        <div class="col-sm-4">
+          <div class="card text-center border-0 bg-light">
+            <div class="card-body">
+              <div class="display-6 fw-bold">{{ checkins|length }}</div>
+              <div class="text-muted small">{% trans "จำนวนการเช็กอิน" %}</div>
+            </div>
+          </div>
         </div>
-        <div class="stat-box stat-matched">
-          <div class="stat-value">{{ matched_count }}</div>
-          <div class="stat-label">{% trans "เทียบใบหน้าได้" %}</div>
+        <div class="col-sm-4">
+          <div class="card text-center border-0 bg-success-subtle">
+            <div class="card-body">
+              <div class="display-6 fw-bold text-success">{{ matched_count }}</div>
+              <div class="text-muted small">{% trans "เทียบใบหน้าได้" %}</div>
+            </div>
+          </div>
         </div>
-        <div class="stat-box stat-unmatched">
-          <div class="stat-value">{{ unmatched_count }}</div>
-          <div class="stat-label">{% trans "เทียบใบหน้าไม่ได้" %}</div>
+        <div class="col-sm-4">
+          <div class="card text-center border-0 bg-danger-subtle">
+            <div class="card-body">
+              <div class="display-6 fw-bold text-danger">{{ unmatched_count }}</div>
+              <div class="text-muted small">{% trans "เทียบใบหน้าไม่ได้" %}</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   {# ---- Check-in table ---- #}
-  <div class="card">
-    <div class="card-header">
-      <h2>{% trans "ประวัติการเช็กอิน" %}</h2>
-      <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-outline btn-sm">⬇ CSV</a>
+  <div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">{% trans "ประวัติการเช็กอิน" %}</h2>
+      <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-outline-secondary btn-sm">⬇ CSV</a>
     </div>
-    <div class="table-wrapper">
-      {% if checkins %}
-        <table>
-          <thead>
+    {% if checkins %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
             <tr>
               <th>#</th>
               <th>{% trans "ภาพใบหน้า" %}</th>
@@ -101,30 +106,30 @@
                   {% if checkin.raw_face_image %}
                     <img src="{{ checkin.raw_face_image.url }}"
                          alt="{% blocktrans with pk=checkin.pk %}ภาพใบหน้า การเช็กอิน #{{ pk }}{% endblocktrans %}"
-                         style="width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border, #ddd);">
+                         style="width:64px; height:64px; object-fit:cover; border-radius:6px;">
                   {% else %}
-                    <span style="color: var(--color-muted);">—</span>
+                    <span class="text-muted">—</span>
                   {% endif %}
                 </td>
                 <td>
                   {% if checkin.face %}
                     {{ checkin.face.name }}
                   {% else %}
-                    <span style="color: var(--color-muted);">{% trans "ไม่ทราบ" %}</span>
+                    <span class="text-muted">{% trans "ไม่ทราบ" %}</span>
                   {% endif %}
                 </td>
                 <td>
                   {% if checkin.face and checkin.face.custom_id %}
                     <code>{{ checkin.face.custom_id }}</code>
                   {% else %}
-                    <span style="color: var(--color-muted);">—</span>
+                    <span class="text-muted">—</span>
                   {% endif %}
                 </td>
                 <td>
                   {% if checkin.matched %}
-                    <span class="badge badge-active">✓ {% trans "เทียบใบหน้าได้" %}</span>
+                    <span class="badge text-bg-success">✓ {% trans "เทียบใบหน้าได้" %}</span>
                   {% else %}
-                    <span class="badge badge-closed">✗ {% trans "เทียบใบหน้าไม่ได้" %}</span>
+                    <span class="badge text-bg-danger">✗ {% trans "เทียบใบหน้าไม่ได้" %}</span>
                   {% endif %}
                 </td>
                 <td>{{ checkin.checked_in_at }}</td>
@@ -132,12 +137,11 @@
             {% endfor %}
           </tbody>
         </table>
-      {% else %}
-        <div class="empty-state">
-          <p>{% trans "ยังไม่มีการเช็กอิน" %}</p>
-        </div>
-      {% endif %}
-    </div>
+      </div>
+    {% else %}
+      <div class="card-body text-center text-muted py-5">
+        <p class="mb-0">{% trans "ยังไม่มีการเช็กอิน" %}</p>
+      </div>
+    {% endif %}
   </div>
-</div>
 {% endblock %}

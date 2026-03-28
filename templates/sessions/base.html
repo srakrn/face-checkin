@@ -5,14 +5,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}{% trans "ระบบเช็กอินด้วยใบหน้า" %}{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/sessions.css' %}" />
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}" />
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@2.x.x/dist/htmx.min.js"></script>
   {% block extra_head %}{% endblock %}
 </head>
-<body>
-  {% block content %}{% endblock %}
+<body class="bg-light">
+  <div class="container py-4">
+    {% block content %}{% endblock %}
+  </div>
+  <script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>
