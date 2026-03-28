@@ -1,0 +1,41 @@
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face Check-in</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f8f9fa;
+      font-family: sans-serif;
+    }
+    img {
+      max-width: 240px;
+      margin-bottom: 2rem;
+    }
+    a.btn {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      background: #212529;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    a.btn:hover {
+      background: #343a40;
+    }
+  </style>
+</head>
+<body>
+  <img src="{% static 'img/schimudtcheck-logo.svg' %}" alt="SchimudtCheck Logo" />
+  <a class="btn" href="{% url 'admin:index' %}">Admin Login</a>
+</body>
+</html>
