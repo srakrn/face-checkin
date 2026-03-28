@@ -8,6 +8,12 @@ echo "=========================================="
 echo "Face Check-in - Starting Container"
 echo "=========================================="
 
+# Ensure media directory exists and is owned by appuser
+echo "Creating media directory: /app/media"
+mkdir -p /app/media
+chown appuser:appgroup /app/media
+chmod 755 /app/media
+
 # Ensure database directory exists for SQLite and is owned by appuser
 if [ -n "$DATABASE_URL" ] && echo "$DATABASE_URL" | grep -q "^sqlite"; then
     # Strip the sqlite:/// prefix to get the filesystem path
