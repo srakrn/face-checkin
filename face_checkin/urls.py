@@ -7,6 +7,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path
+from django.shortcuts import render
 from django.views.generic import TemplateView
 
 
@@ -15,8 +16,15 @@ def health_check(request):
     return JsonResponse({"status": "ok"})
 
 
+def index(request):
+    from apps.sessions.models import Session
+    active_sessions = Session.objects.filter(state="active").select_related("klass").order_by("-scheduled_at")
+    return render(request, "index.html", {"active_sessions": active_sessions})
+
+
 urlpatterns = [
-    path("", TemplateView.as_view(template_name="index.html"), name="index"),
+    path("robots.txt", TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
+    path("", index, name="index"),
     path("health/", health_check, name="health_check"),
     path("admin/", admin.site.urls),
     # Checkin API (match + embeddings)

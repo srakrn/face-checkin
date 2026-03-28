@@ -17,6 +17,18 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+#: templates/index.html
+msgid "เข้าสู่ระบบผู้ดูแล"
+msgstr ""
+
+#: templates/index.html
+msgid "คาบเรียนที่เปิดให้เช็กอิน"
+msgstr ""
+
+#: templates/index.html
+msgid "ยังไม่มีคาบเรียนที่เปิดให้เช็กอิน"
+msgstr ""
+
 #: templates/base.html:7 templates/sessions/base.html:7
 #: templates/sessions/index.html:4 templates/sessions/report.html:4
 #: templates/sessions/session_list.html:4
@@ -118,6 +130,7 @@ msgstr ""
 
 #: templates/sessions/index.html:4 templates/sessions/index.html:10
 #: templates/sessions/report.html:9 templates/sessions/session_list.html:22
+#: templates/sessions/session_list.html:9
 msgid "รายวิชาทั้งหมด"
 msgstr ""
 
@@ -245,10 +258,6 @@ msgstr ""
 #: templates/sessions/session_list.html:4
 #: templates/sessions/session_list.html:28
 msgid "คาบเรียน"
-msgstr ""
-
-#: templates/sessions/session_list.html:9
-msgid "จัดการคาบเรียน"
 msgstr ""
 
 #: templates/sessions/session_list.html:21
