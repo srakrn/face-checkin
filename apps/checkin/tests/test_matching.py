@@ -89,6 +89,7 @@ class TestFindBestMatch:
     ) -> Face:
         return Face.objects.create(
             face_group=face_group,
+            custom_id=name,
             name=name,
             embedding=_make_embedding(embedding_vec),
         )

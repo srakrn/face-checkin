@@ -83,11 +83,18 @@ def checkin_match(request):
             matched=True,
         ).exists()
 
+    # Capture client IP (respect X-Forwarded-For if set by a proxy)
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    ip_address = x_forwarded_for.split(",")[0].strip() if x_forwarded_for else request.META.get("REMOTE_ADDR")
+    user_agent = request.META.get("HTTP_USER_AGENT", "")
+
     # Always log the attempt
     checkin = CheckIn(
         session=session,
         face=matched_face,
         matched=matched_face is not None,
+        ip_address=ip_address,
+        user_agent=user_agent,
     )
     checkin.raw_face_image.save(
         f"checkin_{session_id}_{checkin.pk or 'new'}.jpg",

@@ -75,6 +75,16 @@
             </div>
           </div>
         </div>
+        {% if anomaly_count %}
+        <div class="col-sm-4">
+          <div class="card text-center border-0 bg-warning-subtle">
+            <div class="card-body">
+              <div class="display-6 fw-bold text-warning">{{ anomaly_count }}</div>
+              <div class="text-muted small">⚠ {% trans "ต้องสงสัย (IP/UA ต่างกัน)" %}</div>
+            </div>
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -96,11 +106,13 @@
               <th>{% trans "รหัสประจำตัว" %}</th>
               <th>{% trans "สถานะ" %}</th>
               <th>{% trans "เวลาเช็กอิน" %}</th>
+              <th>{% trans "IP" %}</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {% for checkin in checkins %}
-              <tr>
+              <tr{% if checkin.anomaly_reasons %} class="table-warning"{% endif %}>
                 <td>{{ forloop.counter }}</td>
                 <td>
                   {% if checkin.raw_face_image %}
@@ -133,6 +145,13 @@
                   {% endif %}
                 </td>
                 <td>{{ checkin.checked_in_at }}</td>
+                <td><code class="text-muted small">{{ checkin.ip_address|default:"—" }}</code></td>
+                <td>
+                  {% if checkin.anomaly_reasons %}
+                    <span class="badge text-bg-warning text-dark"
+                          title="{{ checkin.anomaly_reasons|join:', ' }}">⚠ {% trans "ต้องสงสัย" %}</span>
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>

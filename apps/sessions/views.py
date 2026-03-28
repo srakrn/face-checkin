@@ -5,6 +5,8 @@ Session views — API endpoints + HTMX-powered management UI.
 import csv
 import json
 
+from apps.checkin.anomaly import detect_anomalies
+
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -107,6 +109,11 @@ def session_report_page(request, pk: int):
     checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
     matched_count = sum(1 for c in checkins if c.matched)
     unmatched_count = len(checkins) - matched_count
+    anomalies = detect_anomalies(checkins)
+    anomaly_count = sum(1 for reasons in anomalies.values() if reasons)
+    # Annotate each checkin with its anomaly reasons for easy template access
+    for c in checkins:
+        c.anomaly_reasons = anomalies.get(c.pk, [])
     return render(
         request,
         "sessions/report.html",
@@ -115,6 +122,7 @@ def session_report_page(request, pk: int):
             "checkins": checkins,
             "matched_count": matched_count,
             "unmatched_count": unmatched_count,
+            "anomaly_count": anomaly_count,
         },
     )
 
@@ -123,15 +131,17 @@ def session_report_page(request, pk: int):
 def session_report_csv(request, pk: int):
     """GET /sessions/<pk>/report/csv/ — download check-in report as CSV."""
     session = get_object_or_404(Session, pk=pk)
-    checkins = session.checkins.select_related("face").order_by("checked_in_at")
+    checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
+    anomalies = detect_anomalies(checkins)
 
     response = HttpResponse(content_type="text/csv")
     filename = f"session_{session.pk}_report.csv"
     response["Content-Disposition"] = f'attachment; filename="{filename}"'
 
     writer = csv.writer(response)
-    writer.writerow(["#", "Name", "Custom ID", "Matched", "Checked In At"])
+    writer.writerow(["#", "Name", "Custom ID", "Matched", "Checked In At", "IP Address", "User Agent", "Anomaly"])
     for i, c in enumerate(checkins, start=1):
+        reasons = anomalies.get(c.pk, [])
         writer.writerow(
             [
                 i,
@@ -139,6 +149,9 @@ def session_report_csv(request, pk: int):
                 c.face.custom_id if c.face else "",
                 "Yes" if c.matched else "No",
                 c.checked_in_at.strftime("%Y-%m-%d %H:%M:%S"),
+                c.ip_address or "",
+                c.user_agent or "",
+                "; ".join(reasons) if reasons else "",
             ]
         )
     return response

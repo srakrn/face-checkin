@@ -24,6 +24,16 @@ class CheckIn(models.Model):
     )
     matched = models.BooleanField(default=False, verbose_name="ตรงกัน")
     checked_in_at = models.DateTimeField(auto_now_add=True, verbose_name="เวลาเช็กอิน")
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="IP ที่ใช้เช็กอิน",
+    )
+    user_agent = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="User Agent",
+    )
     raw_face_image = models.ImageField(
         upload_to="checkins/images/",
         verbose_name="ภาพใบหน้า",
