@@ -263,6 +263,7 @@ dependencies = [
     { name = "boto3" },
     { name = "dj-database-url" },
     { name = "django" },
+    { name = "django-debug-toolbar" },
     { name = "django-environ" },
     { name = "django-htmx" },
     { name = "django-storages", extra = ["s3"] },
@@ -276,7 +277,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "black" },
-    { name = "django-debug-toolbar" },
     { name = "factory-boy" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -289,6 +289,7 @@ requires-dist = [
     { name = "boto3", specifier = ">=1.35,<2.0" },
     { name = "dj-database-url", specifier = ">=2.3,<3.0" },
     { name = "django", specifier = ">=5.1,<6.0" },
+    { name = "django-debug-toolbar", specifier = ">=5.0,<6.0" },
     { name = "django-environ", specifier = ">=0.11,<1.0" },
     { name = "django-htmx", specifier = ">=1.21,<2.0" },
     { name = "django-storages", extras = ["s3"], specifier = ">=1.14,<2.0" },
@@ -302,7 +303,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "black", specifier = ">=25.0,<26.0" },
-    { name = "django-debug-toolbar", specifier = ">=5.0,<6.0" },
     { name = "factory-boy", specifier = ">=3.3,<4.0" },
     { name = "pytest", specifier = ">=8.0,<9.0" },
     { name = "pytest-cov", specifier = ">=6.0,<7.0" },
