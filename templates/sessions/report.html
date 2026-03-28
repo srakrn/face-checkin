@@ -22,14 +22,14 @@
         <a href="{% url 'sessions:report_csv' session.pk %}?unique=1" class="btn btn-primary btn-sm">
           ⬇ {% trans "ดาวน์โหลด CSV" %}
         </a>
-        <a href="{% url 'sessions:report' session.pk %}" class="btn btn-outline-secondary btn-sm">
+        <a href="{% url 'sessions:report_page' session.pk %}" class="btn btn-outline-secondary btn-sm">
           {% trans "แสดงทั้งหมด" %}
         </a>
       {% else %}
         <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-primary btn-sm">
           ⬇ {% trans "ดาวน์โหลด CSV" %}
         </a>
-        <a href="{% url 'sessions:report' session.pk %}?unique=1" class="btn btn-outline-info btn-sm">
+        <a href="{% url 'sessions:report_page' session.pk %}?unique=1" class="btn btn-outline-info btn-sm">
           👤 {% trans "แสดงเฉพาะที่ไม่ซ้ำ" %}
         </a>
       {% endif %}
