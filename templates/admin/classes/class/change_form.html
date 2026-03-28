@@ -1,0 +1,10 @@
+{% extends "admin/change_form.html" %}
+
+{% block object-tools-items %}
+{{ block.super }}
+{% if auto_create_sessions_url %}
+<li>
+  <a href="{{ auto_create_sessions_url }}" class="historylink">สร้างคาบเรียนอัตโนมัติ</a>
+</li>
+{% endif %}
+{% endblock %}
