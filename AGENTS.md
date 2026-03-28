@@ -11,7 +11,7 @@ A Django web application for face-based attendance check-in.
 - **Frontend**: AlpineJS + HTMX, served via Django templates.
 - **Backend**: Django 5.x (Python 3.12).
 - **Face recognition**: face-api.js runs entirely in the browser; the server only does embedding comparison.
-- **Deployment**: Docker Compose with SQLite or PostgreSQL profiles; Caddy as reverse proxy.
+- **Deployment**: Docker Compose with SQLite or PostgreSQL profiles; Cloudflare cloudflared provides HTTPS.
 
 ---
 
@@ -22,7 +22,7 @@ face-checkin/
 ├── apps/
 │   ├── faces/          # FaceGroup + Face models; enrollment logic
 │   ├── classes/        # Class + ClassTag models
-│   ├── sessions/       # Session model + state machine + auto-close command
+│   ├── sessions/       # Session model + state machine + auto-close/open commands
 │   └── checkin/        # CheckIn model, matching logic, API views, kiosk view
 ├── face_checkin/
 │   ├── settings/
@@ -36,14 +36,14 @@ face-checkin/
 │   └── checkin/
 │       └── kiosk.html      # Kiosk check-in page (AlpineJS + face-api.js)
 ├── static/
-│   └── js/face-api/        # face-api.js bundle + model weights (not committed)
+│   └── js/face-api/        # face-api.js bundle + model weights (committed)
 ├── docker/
-│   └── Caddyfile
+│   ├── entrypoint.sh
+│   └── scheduler.sh
 ├── docker-compose.yml
 ├── Dockerfile
 ├── manage.py
-├── requirements.txt
-├── requirements-dev.txt
+├── pyproject.toml
 ├── pytest.ini
 ├── .env.example
 ├── SPECS.md
@@ -74,6 +74,7 @@ face-checkin/
 | `GET` | `/api/sessions/<pk>/report/` | `apps.sessions.views.session_report` | Check-in report |
 | `GET` | `/api/sessions/<pk>/embeddings/` | `apps.checkin.views.session_embeddings` | All embeddings for client-side caching |
 | `GET` | `/kiosk/<session_id>/` | `apps.checkin.kiosk_views.kiosk` | Kiosk HTML page |
+| `GET` | `/health/` | — | Health check endpoint |
 
 ---
 
@@ -94,7 +95,9 @@ Draft ──activate()──▶ Active ──close()──▶ Closed
 
 - `Session.activate()` / `Session.close()` enforce valid transitions.
 - `auto_close_sessions` management command closes overdue active sessions.
-- Run periodically: `python manage.py auto_close_sessions` (cron / scheduler).
+- `auto_open_sessions` management command activates sessions whose scheduled time has passed.
+- Both commands run periodically via the `scheduler` Docker service (every 60 seconds).
+- Run manually: `python manage.py auto_close_sessions` / `python manage.py auto_open_sessions`.
 
 ---
 
@@ -102,14 +105,22 @@ Draft ──activate()──▶ Active ──close()──▶ Closed
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SECRET_KEY` | (insecure default) | Django secret key |
+| `SECRET_KEY` | (required) | Django secret key |
 | `DEBUG` | `False` | Enable debug mode |
-| `ALLOWED_HOSTS` | `["*"]` | Comma-separated allowed hosts |
+| `ALLOWED_HOSTS` | `*` | Comma-separated allowed hosts |
 | `DATABASE_URL` | SQLite | dj-database-url connection string |
+| `POSTGRES_USER` | `face` | PostgreSQL username (Docker postgres profile) |
+| `POSTGRES_PASSWORD` | `face` | PostgreSQL password (Docker postgres profile) |
+| `POSTGRES_DB` | `face_checkin` | PostgreSQL database name (Docker postgres profile) |
 | `USE_S3` | `False` | Use Backblaze B2 for file storage |
 | `AWS_*` | — | B2 credentials (when `USE_S3=True`) |
 | `TIME_ZONE` | `UTC` | IANA timezone name for admin/template display |
 | `FACE_MATCH_THRESHOLD` | `0.6` | Cosine similarity threshold |
+| `CSRF_TRUSTED_ORIGINS` | (none) | Comma-separated HTTPS origins for CSRF (e.g., `https://example.com`) |
+| `TUNNEL_TOKEN` | (none) | Cloudflare tunnel token (required for cloudflared Docker service) |
+| `DJANGO_SUPERUSER_USERNAME` | (none) | Auto-created superuser username on first container start |
+| `DJANGO_SUPERUSER_EMAIL` | (none) | Auto-created superuser email on first container start |
+| `DJANGO_SUPERUSER_PASSWORD` | (none) | Auto-created superuser password on first container start |
 
 Copy `.env.example` → `.env` and fill in values before running.
 
@@ -135,6 +146,12 @@ Settings module used by `manage.py`: `face_checkin.settings.development`.
 uv run pytest
 ```
 
+Run with coverage:
+
+```bash
+uv run pytest --cov
+```
+
 ---
 
 ## Docker
@@ -147,6 +164,8 @@ docker compose --profile sqlite up --build
 docker compose --profile postgres up --build
 ```
 
+The Docker deployment includes a `scheduler` service that automatically runs `auto_close_sessions` and `auto_open_sessions` every 60 seconds (configured in `docker/scheduler.sh`).
+
 ---
 
 ## Conventions for agents
@@ -156,6 +175,6 @@ docker compose --profile postgres up --build
 3. **Embedding bytes**: Always serialise with `numpy.ndarray.tobytes()` and deserialise with `numpy.frombuffer(..., dtype='float32')`.
 4. **State transitions**: Always use `Session.activate()` / `Session.close()` — never set `state` directly.
 5. **All check-ins are logged**: Even duplicates and unmatched attempts. Never skip `CheckIn` creation.
-6. **Static face-api.js assets**: Place `face-api.min.js` and model weight files under `static/js/face-api/`. Can be committed by Git.
+6. **Static face-api.js assets**: `face-api.min.js` and model weight files are committed under `static/js/face-api/`. No additional download required.
 7. **Migrations**: After changing models, run `python manage.py makemigrations` and commit the migration files.
 8. **Tests**: Place tests in `tests/` at the app level or in a top-level `tests/` directory. Use `pytest-django`.
