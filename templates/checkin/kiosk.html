@@ -517,7 +517,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
       const scaleY = renderedH / vh;
 
       // ── Draw face bounding boxes ───────────────────────────────────────────
-      // Colour and glow change based on auto-capture phase.
+      // Colour changes based on auto-capture phase.
       const isLocking = this._autoPhase === 'locking';
       const isHalted  = this._autoPhase === 'halted' || this._autoPhase === 'processing';
 
@@ -527,8 +527,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
 
       ctx.strokeStyle = boxColour;
       ctx.lineWidth = isLocking ? 4 : 3;
-      ctx.shadowColor = boxColour;
-      ctx.shadowBlur = isLocking ? 16 : 8;
+      ctx.shadowBlur = 0;
 
       for (const det of detections) {
         const box = det.box;
@@ -573,8 +572,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         ctx.arc(arcCx, arcCy, arcR, -Math.PI / 2, -Math.PI / 2 + progress * Math.PI * 2);
         ctx.strokeStyle = '#22c55e';
         ctx.lineWidth = 3;
-        ctx.shadowColor = '#22c55e';
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 0;
         ctx.stroke();
       }
     },

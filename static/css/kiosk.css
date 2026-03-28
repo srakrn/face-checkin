@@ -177,8 +177,8 @@ html, body {
 }
 
 @keyframes pulse-green {
-  from { box-shadow: 0 0 6px rgba(74, 222, 128, 0.4); }
-  to   { box-shadow: 0 0 18px rgba(74, 222, 128, 0.8); }
+  from { }
+  to   { }
 }
 
 .kiosk-btn-capture {
@@ -194,22 +194,19 @@ html, body {
   cursor: pointer;
   background: rgba(59, 130, 246, 0.9);
   color: #ffffff;
-  box-shadow: 0 6px 32px rgba(59, 130, 246, 0.55);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  transition: background 0.2s, transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+  transition: background 0.2s, transform 0.15s, opacity 0.2s;
   white-space: nowrap;
 }
 
 .kiosk-btn-capture:hover:not(:disabled) {
   background: rgba(37, 99, 235, 0.95);
   transform: translateY(-2px);
-  box-shadow: 0 10px 40px rgba(59, 130, 246, 0.65);
 }
 
 .kiosk-btn-capture:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.45);
 }
 
 .kiosk-btn-capture:disabled {
