@@ -7,11 +7,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies (including curl for health checks)
+# Install system dependencies (including curl for health checks and gosu for privilege dropping)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
     curl \
+    gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -29,18 +30,15 @@ RUN chmod +x /app/entrypoint.sh /app/scheduler.sh
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Create non-root user
+# Create non-root user for running the application
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 
-# Create necessary directories for SQLite database and set ownership
-# VOLUME must be declared AFTER chown so Docker initialises the volume with correct ownership
-RUN mkdir -p /data && chown -R appuser:appgroup /data && chmod 755 /data
-
-USER appuser
-
-# Declare volume after ownership is set so Docker copies the ownership into new volumes
-VOLUME ["/data"]
+# Create necessary directories for SQLite database
+# The entrypoint (running as root) will chown /data to appuser at runtime,
+# which handles both new volumes and pre-existing root-owned volumes.
+RUN mkdir -p /data
 
 EXPOSE 8000
 
+# Entrypoint runs as root so it can fix /data ownership, then drops to appuser via gosu
 CMD ["/app/entrypoint.sh"]

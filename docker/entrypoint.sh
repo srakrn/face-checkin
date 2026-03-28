@@ -1,6 +1,6 @@
 #!/bin/sh
 # Docker entrypoint script for Face Check-in application
-# Runs database migrations before starting gunicorn
+# Runs as root to fix volume permissions, then drops to appuser via gosu.
 
 set -e
 
@@ -8,7 +8,7 @@ echo "=========================================="
 echo "Face Check-in - Starting Container"
 echo "=========================================="
 
-# Ensure database directory exists for SQLite
+# Ensure database directory exists for SQLite and is owned by appuser
 if [ -n "$DATABASE_URL" ] && echo "$DATABASE_URL" | grep -q "^sqlite"; then
     # Strip the sqlite:// prefix to get the absolute path (e.g. sqlite:///data/db.sqlite3 -> /data/db.sqlite3)
     DB_PATH=$(echo "$DATABASE_URL" | sed 's|sqlite://||')
@@ -16,7 +16,9 @@ if [ -n "$DATABASE_URL" ] && echo "$DATABASE_URL" | grep -q "^sqlite"; then
     if [ "$DB_DIR" != "." ] && [ "$DB_DIR" != "/" ]; then
         echo "Creating database directory: $DB_DIR"
         mkdir -p "$DB_DIR"
-        chmod 775 "$DB_DIR"
+        # Fix ownership so appuser can write to the volume (handles pre-existing root-owned volumes)
+        chown appuser:appgroup "$DB_DIR"
+        chmod 755 "$DB_DIR"
     fi
 fi
 
@@ -41,7 +43,7 @@ if [ -n "$DATABASE_URL" ] && echo "$DATABASE_URL" | grep -q "^postgresql"; then
 fi
 
 echo "Running database migrations..."
-python manage.py migrate --noinput
+gosu appuser python manage.py migrate --noinput
 
 if [ $? -eq 0 ]; then
     echo "✓ Database migrations completed successfully"
@@ -53,7 +55,7 @@ fi
 # Create superuser from environment variables if configured
 if [ -n "$DJANGO_SUPERUSER_USERNAME" ]; then
     echo "Creating superuser from environment variables..."
-    python manage.py shell <<EOF
+    gosu appuser python manage.py shell <<EOF
 from django.contrib.auth import get_user_model
 User = get_user_model()
 if not User.objects.filter(username="$DJANGO_SUPERUSER_USERNAME").exists():
@@ -72,7 +74,7 @@ echo "=========================================="
 echo "Starting gunicorn web server..."
 echo "=========================================="
 
-exec gunicorn face_checkin.wsgi:application \
+exec gosu appuser gunicorn face_checkin.wsgi:application \
     --bind 0.0.0.0:8000 \
     --workers 4 \
     --timeout 120 \
