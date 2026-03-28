@@ -42,9 +42,9 @@
   {# ---- Meta info ---- #}
   <div class="card shadow-sm mb-4">
     <div class="card-body">
-      <dl class="row mb-3">
-        <dt class="col-sm-3">{% trans "สถานะ" %}</dt>
-        <dd class="col-sm-9">
+      <dl class="mb-3" style="display:grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem;">
+        <dt class="text-muted small fw-normal">{% trans "สถานะ" %}</dt>
+        <dd class="mb-0">
           {% if session.state == "active" %}
             <span class="badge text-bg-success">{% trans "เปิดให้เช็กอิน" %}</span>
           {% else %}
@@ -52,12 +52,12 @@
           {% endif %}
         </dd>
         {% if session.scheduled_at %}
-          <dt class="col-sm-3">{% trans "เวลาเริ่มต้น" %}</dt>
-          <dd class="col-sm-9">{{ session.scheduled_at }}</dd>
+          <dt class="text-muted small fw-normal">{% trans "เวลาเริ่มต้น" %}</dt>
+          <dd class="mb-0 small">{{ session.scheduled_at }}</dd>
         {% endif %}
         {% if session.auto_close_at %}
-          <dt class="col-sm-3">{% trans "ปิดอัตโนมัติเมื่อ" %}</dt>
-          <dd class="col-sm-9">{{ session.auto_close_at }}</dd>
+          <dt class="text-muted small fw-normal">{% trans "เวลาปิด" %}</dt>
+          <dd class="mb-0 small">{{ session.auto_close_at }}</dd>
         {% endif %}
       </dl>
 
