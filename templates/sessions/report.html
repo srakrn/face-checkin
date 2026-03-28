@@ -63,7 +63,7 @@
 
       {# ---- Stats ---- #}
       <div class="row g-3">
-        <div class="col-sm-4">
+        <div class="col-sm-3">
           <div class="card text-center border-0 bg-light">
             <div class="card-body">
               <div class="display-6 fw-bold">{{ checkins|length }}</div>
@@ -71,7 +71,7 @@
             </div>
           </div>
         </div>
-        <div class="col-sm-4">
+        <div class="col-sm-3">
           <div class="card text-center border-0 bg-success-subtle">
             <div class="card-body">
               <div class="display-6 fw-bold text-success">{{ matched_count }}</div>
@@ -79,7 +79,7 @@
             </div>
           </div>
         </div>
-        <div class="col-sm-4">
+        <div class="col-sm-3">
           <div class="card text-center border-0 bg-danger-subtle">
             <div class="card-body">
               <div class="display-6 fw-bold text-danger">{{ unmatched_count }}</div>
@@ -87,8 +87,7 @@
             </div>
           </div>
         </div>
-        {% if anomaly_count %}
-        <div class="col-sm-4">
+        <div class="col-sm-3">
           <div class="card text-center border-0 bg-warning-subtle">
             <div class="card-body">
               <div class="display-6 fw-bold text-warning">{{ anomaly_count }}</div>
@@ -96,7 +95,6 @@
             </div>
           </div>
         </div>
-        {% endif %}
       </div>
     </div>
   </div>
@@ -107,7 +105,7 @@
       <h2 class="h5 mb-0">
         {% trans "ประวัติการเช็กอิน" %}
         {% if unique_only %}
-          <span class="badge text-bg-info ms-2">👤 {% trans "เฉพาะคนแรก" %}</span>
+          <span class="badge text-bg-info ms-2">👤 {% trans "เฉพาะที่ไม่ซ้ำ" %}</span>
         {% endif %}
       </h2>
       {% if unique_only %}
