@@ -12,7 +12,7 @@
 #   docker compose --profile local up  # For local development
 #
 # DATABASE_URL is read from .env.  Set it to match your chosen profile:
-#   sqlite:   DATABASE_URL=sqlite:///data/db.sqlite3
+#   sqlite:   DATABASE_URL=sqlite:////data/db.sqlite3
 #   postgres: DATABASE_URL=postgresql://face:face@db:5432/face_checkin
 #
 # The entrypoint waits for PostgreSQL to be ready before running migrations,
