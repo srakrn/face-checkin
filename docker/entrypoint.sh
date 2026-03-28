@@ -19,6 +19,26 @@ if [ -n "$DATABASE_URL" ] && echo "$DATABASE_URL" | grep -q "^sqlite"; then
     fi
 fi
 
+# Wait for PostgreSQL to be ready before running migrations
+if [ -n "$DATABASE_URL" ] && echo "$DATABASE_URL" | grep -q "^postgresql"; then
+    echo "Waiting for PostgreSQL to be ready..."
+    # Extract host and port from DATABASE_URL (postgresql://user:pass@host:port/db)
+    DB_HOST=$(echo "$DATABASE_URL" | sed -E 's|postgresql://[^@]+@([^:/]+).*|\1|')
+    DB_PORT=$(echo "$DATABASE_URL" | sed -E 's|postgresql://[^@]+@[^:]+:([0-9]+).*|\1|')
+    DB_PORT=${DB_PORT:-5432}
+    RETRIES=30
+    until nc -z "$DB_HOST" "$DB_PORT" 2>/dev/null || [ "$RETRIES" -eq 0 ]; do
+        echo "  PostgreSQL not ready yet (${RETRIES} retries left)..."
+        RETRIES=$((RETRIES - 1))
+        sleep 2
+    done
+    if [ "$RETRIES" -eq 0 ]; then
+        echo "✗ PostgreSQL did not become ready in time"
+        exit 1
+    fi
+    echo "✓ PostgreSQL is ready"
+fi
+
 echo "Running database migrations..."
 python manage.py migrate --noinput
 

@@ -1,17 +1,22 @@
-version: "3.9"
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Face Check-in — Docker Compose
 #
 # Profiles:
-#   sqlite   (default) — Django + cloudflared, SQLite on a persistent volume
-#   postgres           — Django + cloudflared + PostgreSQL
-#   local              — Django only (no tunnel, for local development)
+#   sqlite   — Django + cloudflared + scheduler, SQLite on a persistent volume
+#   postgres — Django + cloudflared + scheduler + PostgreSQL
+#   local    — Django + scheduler only (no tunnel, for local development)
 #
 # Usage:
 #   docker compose --profile sqlite up
 #   docker compose --profile postgres up
 #   docker compose --profile local up  # For local development
+#
+# DATABASE_URL is read from .env.  Set it to match your chosen profile:
+#   sqlite:   DATABASE_URL=sqlite:////data/db.sqlite3
+#   postgres: DATABASE_URL=postgresql://face:face@db:5432/face_checkin
+#
+# The entrypoint waits for PostgreSQL to be ready before running migrations,
+# so no depends_on condition on `db` is required for the django service.
 #
 # Cloudflare Setup:
 #   1. Install cloudflared: https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/tunnel-guide/
@@ -20,40 +25,19 @@ version: "3.9"
 #   4. Set TUNNEL_TOKEN in .env file
 # ─────────────────────────────────────────────────────────────────────────────
 
-x-django-common: &django-common
-  build: .
-  env_file: .env
-  depends_on: []
-  restart: unless-stopped
-  volumes:
-    - media_data:/app/media
-
 services:
-  # ── Django (SQLite profile) ────────────────────────────────────────────────
-  django_sqlite:
-    <<: *django-common
-    profiles: [sqlite, local]
-    environment:
-      DATABASE_URL: "sqlite:////data/db.sqlite3"
+  # ── Django ─────────────────────────────────────────────────────────────────
+  # Serves all profiles. DATABASE_URL from .env selects the database backend.
+  # The entrypoint handles SQLite directory creation and PostgreSQL readiness
+  # (waits for the DB to accept connections before running migrations).
+  django:
+    build: .
+    env_file: .env
+    profiles: [sqlite, local, postgres]
+    restart: unless-stopped
     volumes:
       - media_data:/app/media
       - sqlite_data:/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-
-  # ── Django (PostgreSQL profile) ────────────────────────────────────────────
-  django_postgres:
-    <<: *django-common
-    profiles: [postgres]
-    environment:
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-face}:${POSTGRES_PASSWORD:-face}@db:5432/${POSTGRES_DB:-face_checkin}"
-    depends_on:
-      db:
-        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8000/health/ || exit 1"]
       interval: 30s
@@ -78,56 +62,35 @@ services:
       timeout: 5s
       retries: 5
 
-  # ── Scheduler (SQLite profile) ──────────────────────────────────────────────
-  scheduler_sqlite:
-    <<: *django-common
-    profiles: [sqlite, local]
+  # ── Scheduler ─────────────────────────────────────────────────────────────
+  # Runs auto_open_sessions and auto_close_sessions every SCHEDULE_INTERVAL seconds.
+  # DATABASE_URL is read from .env — set it to match your chosen profile.
+  scheduler:
+    build: .
+    env_file: .env
+    profiles: [sqlite, local, postgres]
+    restart: unless-stopped
     environment:
-      DATABASE_URL: "sqlite:////data/db.sqlite3"
       SCHEDULE_INTERVAL: "60"
     volumes:
       - media_data:/app/media
       - sqlite_data:/data
     command: ["/app/scheduler.sh"]
     depends_on:
-      django_sqlite:
+      django:
         condition: service_started
 
-  # ── Scheduler (PostgreSQL profile) ────────────────────────────────────────
-  scheduler_postgres:
-    <<: *django-common
-    profiles: [postgres]
-    environment:
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-face}:${POSTGRES_PASSWORD:-face}@db:5432/${POSTGRES_DB:-face_checkin}"
-      SCHEDULE_INTERVAL: "60"
-    command: ["/app/scheduler.sh"]
-    depends_on:
-      db:
-        condition: service_healthy
-      django_postgres:
-        condition: service_started
-
-  # ── cloudflared tunnel (SQLite profile) ───────────────────────────────────
-  cloudflared_sqlite:
+  # ── cloudflared tunnel ────────────────────────────────────────────────────
+  # Connects to Django via the service name `django` on the Docker network.
+  cloudflared:
     image: cloudflare/cloudflared:latest
-    profiles: [sqlite]
+    profiles: [sqlite, postgres]
     restart: unless-stopped
     command: tunnel run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN}
     depends_on:
-      - django_sqlite
-
-  # ── cloudflared tunnel (PostgreSQL profile) ───────────────────────────────
-  cloudflared_postgres:
-    image: cloudflare/cloudflared:latest
-    profiles: [postgres]
-    restart: unless-stopped
-    command: tunnel run
-    environment:
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
-    depends_on:
-      - django_postgres
+      - django
 
 volumes:
   sqlite_data:
