@@ -16,7 +16,7 @@ if [ -n "$DATABASE_URL" ] && echo "$DATABASE_URL" | grep -q "^sqlite"; then
     if [ "$DB_DIR" != "." ] && [ "$DB_DIR" != "/" ]; then
         echo "Creating database directory: $DB_DIR"
         mkdir -p "$DB_DIR"
-        chmod 755 "$DB_DIR"
+        chmod 775 "$DB_DIR"
     fi
 fi
 

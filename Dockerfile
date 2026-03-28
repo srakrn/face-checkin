@@ -29,14 +29,17 @@ RUN chmod +x /app/entrypoint.sh /app/scheduler.sh
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Create necessary directories for SQLite database
-RUN mkdir -p /data && chmod 755 /data
-
 # Create non-root user
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
-# Ensure appuser can access the data directory
-RUN chown -R appuser:appgroup /data
+
+# Create necessary directories for SQLite database and set ownership
+# VOLUME must be declared AFTER chown so Docker initialises the volume with correct ownership
+RUN mkdir -p /data && chown -R appuser:appgroup /data && chmod 755 /data
+
 USER appuser
+
+# Declare volume after ownership is set so Docker copies the ownership into new volumes
+VOLUME ["/data"]
 
 EXPOSE 8000
 
