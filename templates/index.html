@@ -129,7 +129,7 @@
 
   <!-- Right pane: active sessions -->
   <main class="right-pane">
-    <h2>🟢 {% trans "คาบเรียนที่เปิดให้เช็กอิน" %}</h2>
+    <h2>{% trans "คาบเรียนที่เปิดให้เช็กอิน" %}</h2>
 
     {% if active_sessions %}
       <div class="session-list">
@@ -139,11 +139,10 @@
               <span class="session-name">{{ session.name }}</span>
               <span class="session-meta">
                 {% if session.scheduled_at %}{{ session.scheduled_at }}{% endif %}
-                {% if session.klass %} · {{ session.klass }}{% endif %}
+                {% if session.klass %}{{ session.klass }}{% endif %}
               </span>
             </div>
             <div style="display:flex;align-items:center;gap:0.75rem;">
-              <span class="badge">{% trans "เปิดให้เช็กอิน" %}</span>
               <a class="kiosk-link" href="/kiosk/{{ session.pk }}/" target="_blank" rel="noopener">
                 🖥 {% trans "เปิดหน้าจอเช็กอิน ↗" %}
               </a>
