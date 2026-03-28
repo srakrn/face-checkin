@@ -1,5 +1,3 @@
-import uuid
-
 from django.db import models
 
 
@@ -30,9 +28,8 @@ class Face(models.Model):
     # custom_id is unique within a face group (not globally)
     custom_id = models.CharField(
         max_length=255,
-        default=uuid.uuid4,
         verbose_name="รหัสประจำตัว",
-        help_text="รหัสเฉพาะภายในกลุ่มใบหน้า ค่าเริ่มต้นเป็น UUID",
+        help_text="รหัสเฉพาะภายในกลุ่มใบหน้า",
     )
     name = models.CharField(max_length=255, verbose_name="ชื่อ")
     remarks = models.TextField(blank=True, verbose_name="หมายเหตุ")
