@@ -12,9 +12,9 @@
   </td>
   <td>
     {% if session.state == "active" %}
-      <span class="badge badge-active">เปิดให้เช็คอิน</span>
+      <span class="badge badge-active">เปิดให้เช็กอิน</span>
     {% else %}
-      <span class="badge badge-closed">ปิดไม่ให้เช็คอิน</span>
+      <span class="badge badge-closed">ปิดไม่ให้เช็กอิน</span>
     {% endif %}
   </td>
   <td>{{ session.scheduled_at|default:"—" }}</td>
@@ -30,7 +30,7 @@
           hx-indicator="#global-indicator"
           hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
         >
-          ■ ปิดการเช็คอิน
+          ■ ปิดการเช็กอิน
         </button>
       {% endif %}
       <a href="{% url 'sessions:report_page' session.pk %}" class="btn btn-outline btn-sm">

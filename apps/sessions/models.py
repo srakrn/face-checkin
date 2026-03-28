@@ -8,8 +8,8 @@ class Session(models.Model):
     """A check-in slot within a class."""
 
     class State(models.TextChoices):
-        ACTIVE = "active", "เปิดให้เช็คอิน"
-        CLOSED = "closed", "ปิดไม่ให้เช็คอิน"
+        ACTIVE = "active", "เปิดให้เช็กอิน"
+        CLOSED = "closed", "ปิดไม่ให้เช็กอิน"
 
     klass = models.ForeignKey(
         Class,

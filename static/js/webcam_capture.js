@@ -30,7 +30,7 @@
     // Inject "Capture from webcam" button next to the photo field
     const captureBtn = document.createElement("button");
     captureBtn.type = "button";
-    captureBtn.textContent = "📷 Capture from webcam";
+    captureBtn.textContent = "📷 ถ่ายภาพจากกล้อง";
     captureBtn.style.cssText =
       "margin-left:8px;padding:4px 12px;background:#417690;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:.85rem";
     photoInput.insertAdjacentElement("afterend", captureBtn);
@@ -42,7 +42,7 @@
     const thumb = document.createElement("img");
     thumb.id = "photo-thumb";
     thumb.style.cssText = "max-width:200px;border-radius:4px;border:1px solid #ccc";
-    thumb.alt = "Photo preview";
+    thumb.alt = "ตัวอย่างรูปภาพ";
     thumbWrap.appendChild(thumb);
     captureBtn.insertAdjacentElement("afterend", thumbWrap);
 
@@ -82,7 +82,7 @@
         thumbWrap.style.display = "block";
 
         // Extract embedding
-        statusLine.textContent = "⏳ Detecting face and extracting embedding…";
+        statusLine.textContent = "⏳ กำลังตรวจจับใบหน้าและดึงข้อมูล…";
         const result = await FaceApiUtils.extractEmbedding(dataURL);
         const msg = FaceApiUtils.embeddingStatusMessage(result);
 
@@ -96,7 +96,7 @@
           hiddenField.value = JSON.stringify(Array.from(embedding));
         }
         statusLine.textContent =
-          "✅ Face detected! Embedding ready (" + embedding.length + "-d vector). Save the form to enroll.";
+          "✅ พบใบหน้า! ข้อมูลใบหน้าพร้อมแล้ว (เวกเตอร์ขนาด " + embedding.length + " มิติ) บันทึกฟอร์มเพื่อลงทะเบียน";
       };
       reader.readAsDataURL(file);
     });

@@ -23,17 +23,17 @@ class CheckIn(models.Model):
         help_text="ว่างเปล่าเมื่อไม่พบใบหน้าที่ตรงกัน",
     )
     matched = models.BooleanField(default=False, verbose_name="ตรงกัน")
-    checked_in_at = models.DateTimeField(auto_now_add=True, verbose_name="เวลาเช็คอิน")
+    checked_in_at = models.DateTimeField(auto_now_add=True, verbose_name="เวลาเช็กอิน")
     raw_face_image = models.ImageField(
         upload_to="checkins/images/",
         verbose_name="ภาพใบหน้า",
-        help_text="ภาพใบหน้าที่ถ่ายขณะเช็คอิน เก็บไว้เพื่อตรวจสอบ",
+        help_text="ภาพใบหน้าที่ถ่ายขณะเช็กอิน เก็บไว้เพื่อตรวจสอบ",
     )
 
     class Meta:
         ordering = ["-checked_in_at"]
-        verbose_name = "การเช็คอิน"
-        verbose_name_plural = "การเช็คอิน"
+        verbose_name = "การเช็กอิน"
+        verbose_name_plural = "การเช็กอิน"
 
     def __str__(self) -> str:
         status = "matched" if self.matched else "unmatched"

@@ -1,29 +1,29 @@
 {% extends "sessions/base.html" %}
 {% load static %}
 
-{% block title %}Report: {{ session.name }} — Face Check-in{% endblock %}
+{% block title %}รายงาน: {{ session.name }} - ระบบเช็กอินด้วยใบหน้า{% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
   <div class="breadcrumb">
-    <a href="{% url 'sessions:index' %}">Session Management</a> /
+    <a href="{% url 'sessions:index' %}">รายวิชาทั้งหมด</a> /
     <a href="{% url 'sessions:class_session_list' session.klass.pk %}">{{ session.klass.name }}</a> /
-    Report
+   รายงาน 
   </div>
 
   <div class="page-header">
     <div>
       <h1>{{ session.name }}</h1>
       <div style="color: var(--color-muted); font-size: 0.875rem;">
-        Class: {{ session.klass.name }}
+        รายวิชา: {{ session.klass.name }}
       </div>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
       <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-primary btn-sm">
-        ⬇ Export CSV
+        ⬇ ดาวน์โหลด CSV
       </a>
       <a href="{% url 'sessions:class_session_list' session.klass.pk %}" class="btn btn-outline btn-sm">
-        ← Back to Sessions
+        ← กลับไปรายการคาบเรียน
       </a>
     </div>
   </div>
@@ -36,21 +36,21 @@
           <span class="label">State</span>
           <span class="value">
             {% if session.state == "active" %}
-              <span class="badge badge-active">เปิดให้เช็คอิน</span>
+              <span class="badge badge-active">เปิดให้เช็กอิน</span>
             {% else %}
-              <span class="badge badge-closed">ปิดไม่ให้เช็คอิน</span>
+              <span class="badge badge-closed">ปิดไม่ให้เช็กอิน</span>
             {% endif %}
           </span>
         </div>
         {% if session.scheduled_at %}
           <div class="report-meta-item">
-            <span class="label">Scheduled At</span>
+            <span class="label">เวลาเปิดคาบเรียน</span>
             <span class="value">{{ session.scheduled_at }}</span>
           </div>
         {% endif %}
         {% if session.auto_close_at %}
           <div class="report-meta-item">
-            <span class="label">Auto-close At</span>
+            <span class="label">เวลาปิดคาบเรียน</span>
             <span class="value">{{ session.auto_close_at }}</span>
           </div>
         {% endif %}
@@ -60,15 +60,15 @@
       <div class="stat-row">
         <div class="stat-box">
           <div class="stat-value">{{ checkins|length }}</div>
-          <div class="stat-label">Total Check-ins</div>
+          <div class="stat-label">จำนวนการเช็กอิน</div>
         </div>
         <div class="stat-box stat-matched">
           <div class="stat-value">{{ matched_count }}</div>
-          <div class="stat-label">Matched</div>
+          <div class="stat-label">เทียบใบหน้าได้</div>
         </div>
         <div class="stat-box stat-unmatched">
           <div class="stat-value">{{ unmatched_count }}</div>
-          <div class="stat-label">Unmatched</div>
+          <div class="stat-label">เทียบใบหน้าไม่ได้</div>
         </div>
       </div>
     </div>
@@ -77,7 +77,7 @@
   {# ---- Check-in table ---- #}
   <div class="card">
     <div class="card-header">
-      <h2>Check-in Log</h2>
+      <h2>ประวัติการเช็กอิน</h2>
       <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-outline btn-sm">⬇ CSV</a>
     </div>
     <div class="table-wrapper">
@@ -86,11 +86,11 @@
           <thead>
             <tr>
               <th>#</th>
-              <th>Face Image</th>
-              <th>Name</th>
-              <th>Custom ID</th>
-              <th>Status</th>
-              <th>Checked In At</th>
+              <th>ใบหน้า</th>
+              <th>ชื่อ</th>
+              <th>รหัส</th>
+              <th>สถานะ</th>
+              <th>เวลา</th>
             </tr>
           </thead>
           <tbody>
@@ -110,7 +110,7 @@
                   {% if checkin.face %}
                     {{ checkin.face.name }}
                   {% else %}
-                    <span style="color: var(--color-muted);">Unknown</span>
+                    <span style="color: var(--color-muted);">ไม่ทราบ</span>
                   {% endif %}
                 </td>
                 <td>
@@ -122,9 +122,9 @@
                 </td>
                 <td>
                   {% if checkin.matched %}
-                    <span class="badge badge-active">✓ Matched</span>
+                    <span class="badge badge-active">✓ เทียบใบหน้าได้</span>
                   {% else %}
-                    <span class="badge badge-closed">✗ Unmatched</span>
+                    <span class="badge badge-closed">✗ เทียบใบหน้าไม่ได้</span>
                   {% endif %}
                 </td>
                 <td>{{ checkin.checked_in_at }}</td>
@@ -134,7 +134,7 @@
         </table>
       {% else %}
         <div class="empty-state">
-          <p>No check-ins recorded for this session yet.</p>
+          <p>ยังไม่มีการเช็กอิน</p>
         </div>
       {% endif %}
     </div>

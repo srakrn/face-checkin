@@ -56,7 +56,7 @@ class SessionAdmin(admin.ModelAdmin):
             obj.name,
         )
 
-    @admin.action(description="ปิดคาบเรียนที่เลือก (เปิดให้เช็คอิน → ปิดไม่ให้เช็คอิน)")
+    @admin.action(description="ปิดคาบเรียนที่เลือก (เปิดให้เช็กอิน → ปิดไม่ให้เช็กอิน)")
     def close_sessions(self, request, queryset):
         count = 0
         for session in queryset.filter(state=Session.State.ACTIVE):

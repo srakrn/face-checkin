@@ -129,23 +129,23 @@
     switch (result.reason) {
       case "not_loaded":
         return (
-          "📸 Photo set. face-api.js not loaded — embedding will not be extracted. " +
-          "Save the form to persist the photo."
+          "📸 ตั้งค่ารูปภาพแล้ว face-api.js ยังไม่ถูกโหลด — จะไม่สามารถดึงข้อมูลใบหน้าได้ " +
+          "บันทึกฟอร์มเพื่อเก็บรูปภาพ"
         );
       case "models_missing":
         return (
-          "📸 Photo set. Face recognition model weights not found at " +
+          "📸 ตั้งค่ารูปภาพแล้ว ไม่พบไฟล์โมเดลการจดจำใบหน้าที่ " +
           modelsUrl +
-          " — embedding will not be extracted. Save the form to persist the photo."
+          " — จะไม่สามารถดึงข้อมูลใบหน้าได้ บันทึกฟอร์มเพื่อเก็บรูปภาพ"
         );
       case "no_face":
         return (
-          "⚠️ No face detected in the captured photo. " +
-          "Try again with better lighting or a clearer face view. " +
-          "The photo has been set — save the form to persist it without an embedding."
+          "⚠️ ไม่พบใบหน้าในรูปภาพที่ถ่าย " +
+          "กรุณาลองใหม่โดยให้แสงสว่างเพียงพอและหันหน้าตรง " +
+          "รูปภาพถูกตั้งค่าแล้ว — บันทึกฟอร์มเพื่อเก็บรูปโดยไม่มีข้อมูลใบหน้า"
         );
       case "error":
-        return "❌ Face detection error: " + result.message;
+        return "❌ เกิดข้อผิดพลาดในการตรวจจับใบหน้า: " + result.message;
       default:
         return null; // embedding is valid
     }
@@ -184,30 +184,30 @@
 
     modal.innerHTML = `
       <div style="background:#fff;border-radius:8px;padding:24px;max-width:520px;width:95%;box-shadow:0 4px 32px rgba(0,0,0,.4)">
-        <h3 style="margin:0 0 12px;font-size:1.1rem">Capture from webcam</h3>
+        <h3 style="margin:0 0 12px;font-size:1.1rem">ถ่ายภาพจากกล้อง</h3>
         <video id="${idPrefix}-video" autoplay playsinline muted
                style="width:100%;border-radius:4px;background:#000;display:block"></video>
         <canvas id="${idPrefix}-canvas" style="display:none"></canvas>
         <div id="${idPrefix}-preview-wrap" style="display:none;margin-top:8px">
-          <img id="${idPrefix}-preview" style="width:100%;border-radius:4px" alt="Captured photo" />
+          <img id="${idPrefix}-preview" style="width:100%;border-radius:4px" alt="ภาพที่ถ่าย" />
         </div>
         <div id="${idPrefix}-status" style="margin-top:8px;font-size:.85rem;color:#555"></div>
         <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
           <button type="button" id="${idPrefix}-capture-btn"
                   style="padding:8px 18px;background:#417690;color:#fff;border:none;border-radius:4px;cursor:pointer">
-            📷 Capture
+            📷 ถ่ายภาพ
           </button>
           <button type="button" id="${idPrefix}-retake-btn"
                   style="display:none;padding:8px 18px;background:#6c757d;color:#fff;border:none;border-radius:4px;cursor:pointer">
-            🔄 Retake
+            🔄 ถ่ายใหม่
           </button>
           <button type="button" id="${idPrefix}-use-btn"
                   style="display:none;padding:8px 18px;background:#28a745;color:#fff;border:none;border-radius:4px;cursor:pointer">
-            ✅ Use this photo
+            ✅ ใช้ภาพนี้
           </button>
           <button type="button" id="${idPrefix}-close-btn"
                   style="padding:8px 18px;background:#dc3545;color:#fff;border:none;border-radius:4px;cursor:pointer;margin-left:auto">
-            ✕ Close
+            ✕ ปิด
           </button>
         </div>
       </div>`;
@@ -236,7 +236,7 @@
     }
 
     function startCamera() {
-      webcamStatus.textContent = "Starting camera…";
+      webcamStatus.textContent = "กำลังเปิดกล้อง…";
       navigator.mediaDevices
         .getUserMedia({ video: { facingMode: "user" }, audio: false })
         .then((s) => {
@@ -245,7 +245,7 @@
           webcamStatus.textContent = "";
         })
         .catch((err) => {
-          webcamStatus.textContent = "Camera error: " + err.message;
+          webcamStatus.textContent = "เกิดข้อผิดพลาดกับกล้อง: " + err.message;
         });
     }
 
@@ -278,7 +278,7 @@
       captureBtnModal.style.display = "none";
       retakeBtn.style.display = "";
       useBtn.style.display = "";
-      webcamStatus.textContent = "Photo captured. Click 'Use this photo' to apply.";
+      webcamStatus.textContent = "ถ่ายภาพแล้ว คลิก 'ใช้ภาพนี้' เพื่อนำไปใช้";
       stopStream();
     }
 
@@ -312,7 +312,7 @@
       closeModal();
 
       // Extract embedding via face-api.js
-      ctx.statusLine.textContent = "⏳ Detecting face and extracting embedding…";
+      ctx.statusLine.textContent = "⏳ กำลังตรวจจับใบหน้าและดึงข้อมูล…";
 
       const result = await extractEmbedding(capturedDataURL);
       const msg = embeddingStatusMessage(result);
@@ -328,7 +328,7 @@
         ctx.hiddenField.value = JSON.stringify(Array.from(embedding));
       }
       ctx.statusLine.textContent =
-        "✅ Face detected! Embedding ready (" + embedding.length + "-d vector). Save the form to enroll.";
+        "✅ พบใบหน้า! ข้อมูลใบหน้าพร้อมแล้ว (เวกเตอร์ขนาด " + embedding.length + " มิติ) บันทึกฟอร์มเพื่อลงทะเบียน";
     }
 
     // Event wiring
