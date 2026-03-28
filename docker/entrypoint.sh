@@ -10,8 +10,8 @@ echo "=========================================="
 
 # Ensure database directory exists for SQLite
 if [ -n "$DATABASE_URL" ] && echo "$DATABASE_URL" | grep -q "^sqlite"; then
-    # Strip the sqlite:/// or sqlite:// prefix to get the raw path
-    DB_PATH=$(echo "$DATABASE_URL" | sed 's|sqlite:///||' | sed 's|sqlite://||')
+    # Strip the sqlite:// prefix to get the absolute path (e.g. sqlite:///data/db.sqlite3 -> /data/db.sqlite3)
+    DB_PATH=$(echo "$DATABASE_URL" | sed 's|sqlite://||')
     DB_DIR=$(dirname "$DB_PATH")
     if [ "$DB_DIR" != "." ] && [ "$DB_DIR" != "/" ]; then
         echo "Creating database directory: $DB_DIR"
