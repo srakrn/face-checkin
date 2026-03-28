@@ -4,8 +4,6 @@ Production settings — extends base.
 
 from .base import *  # noqa: F401, F403
 
-DEBUG = False
-
 # Security hardening
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
