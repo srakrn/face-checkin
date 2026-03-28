@@ -7,6 +7,7 @@ class Class(models.Model):
     """A class that groups multiple sessions and is tied to a face group."""
 
     name = models.CharField(max_length=255, verbose_name="ชื่อวิชา")
+    shorthand = models.CharField(max_length=50, unique=True, verbose_name="ชื่อย่อ")
     description = models.TextField(blank=True, verbose_name="คำอธิบาย")
     face_group = models.ForeignKey(
         FaceGroup,
