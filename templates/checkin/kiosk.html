@@ -1,10 +1,10 @@
-{% load static %}
+{% load static i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>เช็กอิน{% if session %}: {{ session.klass.name }} {{ session.name }}{% endif %}</title>
+  <title>{% trans "เช็กอิน" %}{% if session %}: {{ session.klass.name }} {{ session.name }}{% endif %}</title>
 
   {# Kiosk stylesheet #}
   <link rel="stylesheet" href="{% static 'css/kiosk.css' %}" />
@@ -22,7 +22,7 @@
 <div class="kiosk-container">
   <div class="kiosk-state-panel">
     <div class="kiosk-state-icon">🔍</div>
-    <div class="kiosk-state-title">ไม่พบคาบเรียนให้เช็กอิน</div>
+    <div class="kiosk-state-title">{% trans "ไม่พบคาบเรียนให้เช็กอิน" %}</div>
   </div>
 </div>
 
@@ -33,7 +33,7 @@
   <p class="kiosk-subtitle">{{ session.klass.name }}</p>
   <div class="kiosk-state-panel">
     <div class="kiosk-state-icon">🔒</div>
-    <div class="kiosk-state-title">หมดเวลาเช็กอิน</div>
+    <div class="kiosk-state-title">{% trans "หมดเวลาเช็กอิน" %}</div>
     <div class="kiosk-state-subtitle">
     </div>
   </div>
@@ -68,7 +68,7 @@
   <template x-if="loading">
     <div class="kiosk-loading-overlay">
       <div class="kiosk-spinner"></div>
-      <span x-text="loadingMessage">Loading…</span>
+      <span x-text="loadingMessage">{% trans "กำลังโหลด…" %}</span>
     </div>
   </template>
 
@@ -105,14 +105,14 @@
     {# Top-5 matches mini-table #}
     <template x-if="topMatches.length > 0">
       <div class="kiosk-top-matches">
-        <div class="kiosk-top-matches-title">รายการหน้าคล้าย</div>
+        <div class="kiosk-top-matches-title">{% trans "รายการหน้าคล้าย" %}</div>
         <table class="kiosk-top-matches-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>รหัส</th>
-              <th>ชื่อ</th>
-              <th>ตวามคล้าย</th>
+              <th>{% trans "รหัสประจำตัว" %}</th>
+              <th>{% trans "ชื่อ" %}</th>
+              <th>{% trans "ความคล้าย" %}</th>
             </tr>
           </thead>
           <tbody>
@@ -191,7 +191,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
   return {
     // ── state ──────────────────────────────────────────────────────────────
     loading: true,
-    loadingMessage: 'Loading face recognition models…',
+    loadingMessage: '{% trans "กำลังโหลดโมเดลจดจำใบหน้า…" %}',
     processing: false,
     message: '',
     messageClass: '',
@@ -244,7 +244,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
     haltUntilClear: false,
 
     /** Human-readable status label shown in the bottom pill. */
-    autoStatusText: '👤 ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง',
+    autoStatusText: '👤 {% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}',
 
     /** CSS modifier class for the bottom pill. */
     autoStatusClass: 'auto-status-ready',
@@ -259,19 +259,19 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
       this.haltUntilClear = phase === 'halted' || phase === 'processing';
       switch (phase) {
         case 'locking':
-          this.autoStatusText  = '🎯 ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง';
+          this.autoStatusText  = '🎯 {% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}';
           this.autoStatusClass = 'auto-status-locking';
           break;
         case 'processing':
-          this.autoStatusText  = '⏳ กำลังประมวลผล…';
+          this.autoStatusText  = '⏳ {% trans "กำลังประมวลผล…" %}';
           this.autoStatusClass = 'auto-status-processing';
           break;
         case 'halted':
-          this.autoStatusText  = '✋ รอให้ออกจากกล้อง';
+          this.autoStatusText  = '✋ {% trans "รอให้ออกจากกล้อง" %}';
           this.autoStatusClass = 'auto-status-halted';
           break;
         default: // 'ready'
-          this.autoStatusText  = '👤 ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง';
+          this.autoStatusText  = '👤 {% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}';
           this.autoStatusClass = 'auto-status-ready';
           // Clear the result panel only when the kiosk fully resets to ready.
           this.message = '';
@@ -290,12 +290,12 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         await faceapi.nets.faceRecognitionNet.loadFromUri(modelPath);
       } catch (err) {
         this.loading = false;
-        this.showMessage('Failed to load face recognition models: ' + err.message, 'error');
+        this.showMessage('{% trans "โหลดโมเดลจดจำใบหน้าไม่สำเร็จ" %}: ' + err.message, 'error');
         return;
       }
 
       // 2. Fetch and cache embeddings from the server
-      this.loadingMessage = 'Fetching participant embeddings…';
+      this.loadingMessage = '{% trans "กำลังดึงข้อมูลใบหน้าผู้เข้าร่วม…" %}';
       try {
         const resp = await fetch(embeddingsUrl);
         if (resp.ok) {
@@ -328,7 +328,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         });
         this._startOverlay();
       } catch (err) {
-        this.showMessage('Camera access denied: ' + err.message, 'error');
+        this.showMessage('{% trans "ไม่สามารถเข้าถึงกล้องได้" %}: ' + err.message, 'error');
       }
 
       // 4. Poll session state every ~60 s; reload if it changes (e.g. closed)
@@ -646,7 +646,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         .withFaceDescriptor();
 
       if (!detection) {
-        this.showMessage('ไม่พบใบหน้าในรูป', 'warning');
+        this.showMessage('{% trans "ไม่พบใบหน้าในรูป" %}', 'warning');
         this.processing = false;
         this._setPhase('halted');
         this._clearSince = null;
@@ -664,7 +664,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         const clientMatch = this._clientSideMatch(descriptor);
         if (!clientMatch) {
           // Client-side says no match — skip server round-trip
-          this.showMessage('Face not recognised. Please try again or contact staff.', 'error');
+          this.showMessage('{% trans "ไม่พบใบหน้าที่ตรงกัน กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่" %}', 'error');
           this.processing = false;
           this._setPhase('halted');
           this._clearSince = null;
@@ -672,7 +672,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         }
         // Client-side found a candidate — show optimistic feedback while
         // the server confirms.
-        this.showMessage(`Verifying… ${clientMatch.name}`, 'info');
+        this.showMessage(`{% trans "กำลังตรวจสอบ…" %} ${clientMatch.name}`, 'info');
       }
 
       // Convert canvas to blob for server submission
@@ -688,7 +688,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         const data = await resp.json();
 
         if (!resp.ok) {
-          this.showMessage(data.error || 'Server error.', 'error');
+          this.showMessage(data.error || '{% trans "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์" %}', 'error');
           this.topMatches = [];
         } else {
           // Always update top matches from server response
@@ -696,16 +696,16 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
 
           if (data.matched) {
             if (data.already_checked_in) {
-              this.showMessage(`${data.face.name} เช็กอินไปก่อนหน้านี้แล้ว`, 'warning');
+              this.showMessage(`${data.face.name} {% trans "เช็กอินไปก่อนหน้านี้แล้ว" %}`, 'warning');
             } else {
-              this.showMessage(`✅ ${data.face.name} เช็กอินสำเร็จ`, 'success');
+              this.showMessage(`✅ ${data.face.name} {% trans "เช็กอินสำเร็จ" %}`, 'success');
             }
           } else {
-            this.showMessage('ไม่พบใบหน้า', 'error');
+            this.showMessage('{% trans "ไม่พบใบหน้าที่ตรงกัน" %}', 'error');
           }
         }
       } catch (err) {
-        this.showMessage('Network error: ' + err.message, 'error');
+        this.showMessage('{% trans "เกิดข้อผิดพลาดของเครือข่าย" %}: ' + err.message, 'error');
         this.topMatches = [];
       }
 

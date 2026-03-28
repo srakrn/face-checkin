@@ -1,0 +1,260 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-03-28 21:30+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+#: templates/base.html:7 templates/sessions/base.html:7
+#: templates/sessions/index.html:4 templates/sessions/report.html:4
+#: templates/sessions/session_list.html:4
+msgid "ระบบเช็กอินด้วยใบหน้า"
+msgstr ""
+
+#: templates/checkin/kiosk.html:7
+msgid "เช็กอิน"
+msgstr ""
+
+#: templates/checkin/kiosk.html:25
+msgid "ไม่พบคาบเรียนให้เช็กอิน"
+msgstr ""
+
+#: templates/checkin/kiosk.html:36
+msgid "หมดเวลาเช็กอิน"
+msgstr ""
+
+#: templates/checkin/kiosk.html:71
+msgid "กำลังโหลด…"
+msgstr ""
+
+#: templates/checkin/kiosk.html:108
+msgid "รายการหน้าคล้าย"
+msgstr ""
+
+#: templates/checkin/kiosk.html:113 templates/sessions/report.html:91
+msgid "รหัสประจำตัว"
+msgstr ""
+
+#: templates/checkin/kiosk.html:114 templates/sessions/report.html:90
+msgid "ชื่อ"
+msgstr ""
+
+#: templates/checkin/kiosk.html:115
+msgid "ความคล้าย"
+msgstr ""
+
+#: templates/checkin/kiosk.html:194
+msgid "กำลังโหลดโมเดลจดจำใบหน้า…"
+msgstr ""
+
+#: templates/checkin/kiosk.html:247 templates/checkin/kiosk.html:262
+#: templates/checkin/kiosk.html:274
+msgid "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง"
+msgstr ""
+
+#: templates/checkin/kiosk.html:266
+msgid "กำลังประมวลผล…"
+msgstr ""
+
+#: templates/checkin/kiosk.html:270
+msgid "รอให้ออกจากกล้อง"
+msgstr ""
+
+#: templates/checkin/kiosk.html:293
+msgid "โหลดโมเดลจดจำใบหน้าไม่สำเร็จ"
+msgstr ""
+
+#: templates/checkin/kiosk.html:298
+msgid "กำลังดึงข้อมูลใบหน้าผู้เข้าร่วม…"
+msgstr ""
+
+#: templates/checkin/kiosk.html:331
+msgid "ไม่สามารถเข้าถึงกล้องได้"
+msgstr ""
+
+#: templates/checkin/kiosk.html:649
+msgid "ไม่พบใบหน้าในรูป"
+msgstr ""
+
+#: templates/checkin/kiosk.html:667
+msgid "ไม่พบใบหน้าที่ตรงกัน กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่"
+msgstr ""
+
+#: templates/checkin/kiosk.html:675
+msgid "กำลังตรวจสอบ…"
+msgstr ""
+
+#: templates/checkin/kiosk.html:691
+msgid "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์"
+msgstr ""
+
+#: templates/checkin/kiosk.html:699
+msgid "เช็กอินไปก่อนหน้านี้แล้ว"
+msgstr ""
+
+#: templates/checkin/kiosk.html:701
+msgid "เช็กอินสำเร็จ"
+msgstr ""
+
+#: templates/checkin/kiosk.html:704
+msgid "ไม่พบใบหน้าที่ตรงกัน"
+msgstr ""
+
+#: templates/checkin/kiosk.html:708
+msgid "เกิดข้อผิดพลาดของเครือข่าย"
+msgstr ""
+
+#: templates/sessions/index.html:4 templates/sessions/index.html:10
+#: templates/sessions/report.html:9 templates/sessions/session_list.html:22
+msgid "รายวิชาทั้งหมด"
+msgstr ""
+
+#: templates/sessions/index.html:21
+#, python-format
+msgid "%(count)s คาบเรียน"
+msgstr ""
+
+#: templates/sessions/index.html:22 templates/sessions/session_list.html:17
+msgid "กลุ่มใบหน้า"
+msgstr ""
+
+#: templates/sessions/index.html:30
+msgid "ยังไม่มีวิชา"
+msgstr ""
+
+#: templates/sessions/index.html:30
+#: templates/sessions/partials/session_table.html:22
+msgid "สร้างได้ที่ Admin"
+msgstr ""
+
+#: templates/sessions/partials/session_row.html:9
+msgid "เปิดหน้าจอเช็กอิน ↗"
+msgstr ""
+
+#: templates/sessions/partials/session_row.html:15
+#: templates/sessions/report.html:39
+msgid "เปิดให้เช็กอิน"
+msgstr ""
+
+#: templates/sessions/partials/session_row.html:17
+#: templates/sessions/report.html:41
+msgid "ปิดไม่ให้เช็กอิน"
+msgstr ""
+
+#: templates/sessions/partials/session_row.html:33
+msgid "ปิดการเช็กอิน"
+msgstr ""
+
+#: templates/sessions/partials/session_row.html:37
+#: templates/sessions/report.html:4 templates/sessions/report.html:11
+msgid "รายงาน"
+msgstr ""
+
+#: templates/sessions/partials/session_row.html:40
+msgid "แก้ไข"
+msgstr ""
+
+#: templates/sessions/partials/session_table.html:7
+msgid "ชื่อคาบเรียน"
+msgstr ""
+
+#: templates/sessions/partials/session_table.html:8
+#: templates/sessions/report.html:36 templates/sessions/report.html:92
+msgid "สถานะ"
+msgstr ""
+
+#: templates/sessions/partials/session_table.html:9
+#: templates/sessions/report.html:47
+msgid "เวลาเริ่มต้น"
+msgstr ""
+
+#: templates/sessions/partials/session_table.html:10
+#: templates/sessions/report.html:53
+msgid "ปิดอัตโนมัติเมื่อ"
+msgstr ""
+
+#: templates/sessions/partials/session_table.html:11
+msgid "การดำเนินการ"
+msgstr ""
+
+#: templates/sessions/partials/session_table.html:22
+msgid "ยังไม่มีคาบเรียน"
+msgstr ""
+
+#: templates/sessions/report.html:18
+msgid "วิชา"
+msgstr ""
+
+#: templates/sessions/report.html:23
+msgid "ดาวน์โหลด CSV"
+msgstr ""
+
+#: templates/sessions/report.html:26
+msgid "กลับไปรายการคาบเรียน"
+msgstr ""
+
+#: templates/sessions/report.html:63
+msgid "จำนวนการเช็กอิน"
+msgstr ""
+
+#: templates/sessions/report.html:67 templates/sessions/report.html:125
+msgid "เทียบใบหน้าได้"
+msgstr ""
+
+#: templates/sessions/report.html:71 templates/sessions/report.html:127
+msgid "เทียบใบหน้าไม่ได้"
+msgstr ""
+
+#: templates/sessions/report.html:80
+msgid "ประวัติการเช็กอิน"
+msgstr ""
+
+#: templates/sessions/report.html:89
+msgid "ภาพใบหน้า"
+msgstr ""
+
+#: templates/sessions/report.html:93
+msgid "เวลาเช็กอิน"
+msgstr ""
+
+#: templates/sessions/report.html:103
+#, python-format
+msgid "ภาพใบหน้า การเช็กอิน #%(pk)s"
+msgstr ""
+
+#: templates/sessions/report.html:113
+msgid "ไม่ทราบ"
+msgstr ""
+
+#: templates/sessions/report.html:137
+msgid "ยังไม่มีการเช็กอิน"
+msgstr ""
+
+#: templates/sessions/session_list.html:4
+#: templates/sessions/session_list.html:28
+msgid "คาบเรียน"
+msgstr ""
+
+#: templates/sessions/session_list.html:9
+msgid "จัดการคาบเรียน"
+msgstr ""
+
+#: templates/sessions/session_list.html:21
+msgid "คาบเรียนใหม่"
+msgstr ""
+
+#: templates/sessions/session_list.html:29
+msgid "กำลังอัปเดต…"
+msgstr ""

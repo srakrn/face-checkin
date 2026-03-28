@@ -1,14 +1,14 @@
-{% load static %}
+{% load static i18n %}
 {% if sessions %}
   <table>
     <thead>
       <tr>
         <th>#</th>
-        <th>Name</th>
-        <th>State</th>
-        <th>Scheduled At</th>
-        <th>Auto-close At</th>
-        <th>Actions</th>
+        <th>{% trans "ชื่อคาบเรียน" %}</th>
+        <th>{% trans "สถานะ" %}</th>
+        <th>{% trans "เวลาเริ่มต้น" %}</th>
+        <th>{% trans "ปิดอัตโนมัติเมื่อ" %}</th>
+        <th>{% trans "การดำเนินการ" %}</th>
       </tr>
     </thead>
     <tbody id="session-rows">
@@ -19,6 +19,6 @@
   </table>
 {% else %}
   <div class="empty-state">
-    <p>No sessions yet. <a href="{% url 'admin:checkin_sessions_session_add' %}">Create one in the admin</a>.</p>
+    <p>{% trans "ยังไม่มีคาบเรียน" %} <a href="{% url 'admin:checkin_sessions_session_add' %}">{% trans "สร้างได้ที่ Admin" %}</a></p>
   </div>
 {% endif %}

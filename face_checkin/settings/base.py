@@ -95,6 +95,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 LANGUAGE_CODE = "th"
+
+LANGUAGES = [
+    ("th", "ภาษาไทย"),
+    ("en", "English"),
+]
+
+LOCALE_PATHS = [BASE_DIR / "locale"]
+
 TIME_ZONE = env("TIME_ZONE", default="UTC")
 USE_I18N = True
 USE_TZ = True

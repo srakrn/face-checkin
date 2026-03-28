@@ -1,4 +1,4 @@
-{% load static %}
+{% load static i18n %}
 <tr id="session-row-{{ session.pk }}">
   <td>{{ session.pk }}</td>
   <td>
@@ -6,15 +6,15 @@
     {% if session.state == "active" %}
       <br>
       <a href="/kiosk/{{ session.pk }}/" class="kiosk-link" target="_blank" rel="noopener">
-        🖥 Open Kiosk ↗
+        🖥 {% trans "เปิดหน้าจอเช็กอิน ↗" %}
       </a>
     {% endif %}
   </td>
   <td>
     {% if session.state == "active" %}
-      <span class="badge badge-active">เปิดให้เช็กอิน</span>
+      <span class="badge badge-active">{% trans "เปิดให้เช็กอิน" %}</span>
     {% else %}
-      <span class="badge badge-closed">ปิดไม่ให้เช็กอิน</span>
+      <span class="badge badge-closed">{% trans "ปิดไม่ให้เช็กอิน" %}</span>
     {% endif %}
   </td>
   <td>{{ session.scheduled_at|default:"—" }}</td>
@@ -30,14 +30,14 @@
           hx-indicator="#global-indicator"
           hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
         >
-          ■ ปิดการเช็กอิน
+          ■ {% trans "ปิดการเช็กอิน" %}
         </button>
       {% endif %}
       <a href="{% url 'sessions:report_page' session.pk %}" class="btn btn-outline btn-sm">
-        📋 Report
+        📋 {% trans "รายงาน" %}
       </a>
       <a href="{% url 'admin:checkin_sessions_session_change' session.pk %}" class="btn btn-outline btn-sm">
-        ✏ Edit
+        ✏ {% trans "แก้ไข" %}
       </a>
     </div>
   </td>

@@ -1,12 +1,12 @@
 {% extends "sessions/base.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}{{ klass.name }} — Sessions — Face Check-in{% endblock %}
+{% block title %}{{ klass.name }} — {% trans "คาบเรียน" %} — {% trans "ระบบเช็กอินด้วยใบหน้า" %}{% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
   <div class="breadcrumb">
-    <a href="{% url 'sessions:index' %}">Session Management</a> /
+    <a href="{% url 'sessions:index' %}">{% trans "จัดการคาบเรียน" %}</a> /
     {{ klass.name }}
   </div>
 
@@ -14,19 +14,19 @@
     <div>
       <h1>{{ klass.name }}</h1>
       <div style="color: var(--color-muted); font-size: 0.875rem;">
-        Face group: {{ klass.face_group.name }}
+        {% trans "กลุ่มใบหน้า" %}: {{ klass.face_group.name }}
       </div>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <a href="{% url 'admin:checkin_sessions_session_add' %}" class="btn btn-primary btn-sm">+ New Session</a>
-      <a href="{% url 'sessions:index' %}" class="btn btn-outline btn-sm">← All Classes</a>
+      <a href="{% url 'admin:checkin_sessions_session_add' %}" class="btn btn-primary btn-sm">+ {% trans "คาบเรียนใหม่" %}</a>
+      <a href="{% url 'sessions:index' %}" class="btn btn-outline btn-sm">← {% trans "รายวิชาทั้งหมด" %}</a>
     </div>
   </div>
 
   <div class="card">
     <div class="card-header">
-      <h2>Sessions</h2>
-      <span class="htmx-indicator" id="global-indicator">Updating…</span>
+      <h2>{% trans "คาบเรียน" %}</h2>
+      <span class="htmx-indicator" id="global-indicator">{% trans "กำลังอัปเดต…" %}</span>
     </div>
 
     <div class="table-wrapper" id="session-table">

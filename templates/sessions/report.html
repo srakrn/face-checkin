@@ -1,29 +1,29 @@
 {% extends "sessions/base.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}รายงาน: {{ session.name }} - ระบบเช็กอินด้วยใบหน้า{% endblock %}
+{% block title %}{% trans "รายงาน" %}: {{ session.name }} - {% trans "ระบบเช็กอินด้วยใบหน้า" %}{% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
   <div class="breadcrumb">
-    <a href="{% url 'sessions:index' %}">รายวิชาทั้งหมด</a> /
+    <a href="{% url 'sessions:index' %}">{% trans "รายวิชาทั้งหมด" %}</a> /
     <a href="{% url 'sessions:class_session_list' session.klass.pk %}">{{ session.klass.name }}</a> /
-   รายงาน 
+    {% trans "รายงาน" %}
   </div>
 
   <div class="page-header">
     <div>
       <h1>{{ session.name }}</h1>
       <div style="color: var(--color-muted); font-size: 0.875rem;">
-        รายวิชา: {{ session.klass.name }}
+        {% trans "วิชา" %}: {{ session.klass.name }}
       </div>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
       <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-primary btn-sm">
-        ⬇ ดาวน์โหลด CSV
+        ⬇ {% trans "ดาวน์โหลด CSV" %}
       </a>
       <a href="{% url 'sessions:class_session_list' session.klass.pk %}" class="btn btn-outline btn-sm">
-        ← กลับไปรายการคาบเรียน
+        ← {% trans "กลับไปรายการคาบเรียน" %}
       </a>
     </div>
   </div>
@@ -33,24 +33,24 @@
     <div class="card-body">
       <div class="report-meta">
         <div class="report-meta-item">
-          <span class="label">State</span>
+          <span class="label">{% trans "สถานะ" %}</span>
           <span class="value">
             {% if session.state == "active" %}
-              <span class="badge badge-active">เปิดให้เช็กอิน</span>
+              <span class="badge badge-active">{% trans "เปิดให้เช็กอิน" %}</span>
             {% else %}
-              <span class="badge badge-closed">ปิดไม่ให้เช็กอิน</span>
+              <span class="badge badge-closed">{% trans "ปิดไม่ให้เช็กอิน" %}</span>
             {% endif %}
           </span>
         </div>
         {% if session.scheduled_at %}
           <div class="report-meta-item">
-            <span class="label">เวลาเปิดคาบเรียน</span>
+            <span class="label">{% trans "เวลาเริ่มต้น" %}</span>
             <span class="value">{{ session.scheduled_at }}</span>
           </div>
         {% endif %}
         {% if session.auto_close_at %}
           <div class="report-meta-item">
-            <span class="label">เวลาปิดคาบเรียน</span>
+            <span class="label">{% trans "ปิดอัตโนมัติเมื่อ" %}</span>
             <span class="value">{{ session.auto_close_at }}</span>
           </div>
         {% endif %}
@@ -60,15 +60,15 @@
       <div class="stat-row">
         <div class="stat-box">
           <div class="stat-value">{{ checkins|length }}</div>
-          <div class="stat-label">จำนวนการเช็กอิน</div>
+          <div class="stat-label">{% trans "จำนวนการเช็กอิน" %}</div>
         </div>
         <div class="stat-box stat-matched">
           <div class="stat-value">{{ matched_count }}</div>
-          <div class="stat-label">เทียบใบหน้าได้</div>
+          <div class="stat-label">{% trans "เทียบใบหน้าได้" %}</div>
         </div>
         <div class="stat-box stat-unmatched">
           <div class="stat-value">{{ unmatched_count }}</div>
-          <div class="stat-label">เทียบใบหน้าไม่ได้</div>
+          <div class="stat-label">{% trans "เทียบใบหน้าไม่ได้" %}</div>
         </div>
       </div>
     </div>
@@ -77,7 +77,7 @@
   {# ---- Check-in table ---- #}
   <div class="card">
     <div class="card-header">
-      <h2>ประวัติการเช็กอิน</h2>
+      <h2>{% trans "ประวัติการเช็กอิน" %}</h2>
       <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-outline btn-sm">⬇ CSV</a>
     </div>
     <div class="table-wrapper">
@@ -86,11 +86,11 @@
           <thead>
             <tr>
               <th>#</th>
-              <th>ใบหน้า</th>
-              <th>ชื่อ</th>
-              <th>รหัส</th>
-              <th>สถานะ</th>
-              <th>เวลา</th>
+              <th>{% trans "ภาพใบหน้า" %}</th>
+              <th>{% trans "ชื่อ" %}</th>
+              <th>{% trans "รหัสประจำตัว" %}</th>
+              <th>{% trans "สถานะ" %}</th>
+              <th>{% trans "เวลาเช็กอิน" %}</th>
             </tr>
           </thead>
           <tbody>
@@ -100,7 +100,7 @@
                 <td>
                   {% if checkin.raw_face_image %}
                     <img src="{{ checkin.raw_face_image.url }}"
-                         alt="Face image for check-in #{{ checkin.pk }}"
+                         alt="{% blocktrans with pk=checkin.pk %}ภาพใบหน้า การเช็กอิน #{{ pk }}{% endblocktrans %}"
                          style="width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--color-border, #ddd);">
                   {% else %}
                     <span style="color: var(--color-muted);">—</span>
@@ -110,7 +110,7 @@
                   {% if checkin.face %}
                     {{ checkin.face.name }}
                   {% else %}
-                    <span style="color: var(--color-muted);">ไม่ทราบ</span>
+                    <span style="color: var(--color-muted);">{% trans "ไม่ทราบ" %}</span>
                   {% endif %}
                 </td>
                 <td>
@@ -122,9 +122,9 @@
                 </td>
                 <td>
                   {% if checkin.matched %}
-                    <span class="badge badge-active">✓ เทียบใบหน้าได้</span>
+                    <span class="badge badge-active">✓ {% trans "เทียบใบหน้าได้" %}</span>
                   {% else %}
-                    <span class="badge badge-closed">✗ เทียบใบหน้าไม่ได้</span>
+                    <span class="badge badge-closed">✗ {% trans "เทียบใบหน้าไม่ได้" %}</span>
                   {% endif %}
                 </td>
                 <td>{{ checkin.checked_in_at }}</td>
@@ -134,7 +134,7 @@
         </table>
       {% else %}
         <div class="empty-state">
-          <p>ยังไม่มีการเช็กอิน</p>
+          <p>{% trans "ยังไม่มีการเช็กอิน" %}</p>
         </div>
       {% endif %}
     </div>

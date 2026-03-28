@@ -1,13 +1,13 @@
 {% extends "sessions/base.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}รายวิชาทั้งหมด - ระบบเช็กอินด้วยใบหน้า{% endblock %}
+{% block title %}{% trans "รายวิชาทั้งหมด" %} - {% trans "ระบบเช็กอินด้วยใบหน้า" %}{% endblock %}
 
 {% block content %}
 <div class="page-wrapper">
   <div class="page-header">
     <div>
-      <h1>รายวิชาทั้งหมด</h1>
+      <h1>{% trans "รายวิชาทั้งหมด" %}</h1>
     </div>
     <a href="{% url 'admin:index' %}" class="btn btn-outline btn-sm">← Admin</a>
   </div>
@@ -18,8 +18,8 @@
         <a href="{% url 'sessions:class_session_list' klass.pk %}" class="class-card">
           <h3>{{ klass.name }}</h3>
           <div class="meta">
-            {{ klass.sessions.count }} คาบเรียน
-            &nbsp;·&nbsp; กลุ่มใบหน้า: {{ klass.face_group.name }}
+            {% blocktrans with count=klass.sessions.count %}{{ count }} คาบเรียน{% endblocktrans %}
+            &nbsp;·&nbsp; {% trans "กลุ่มใบหน้า" %}: {{ klass.face_group.name }}
           </div>
         </a>
       {% endfor %}
@@ -27,7 +27,7 @@
   {% else %}
     <div class="card">
       <div class="empty-state">
-        <p>No classes found. <a href="{% url 'admin:classes_class_add' %}">Create one in the admin</a>.</p>
+        <p>{% trans "ยังไม่มีวิชา" %} <a href="{% url 'admin:classes_class_add' %}">{% trans "สร้างได้ที่ Admin" %}</a></p>
       </div>
     </div>
   {% endif %}
