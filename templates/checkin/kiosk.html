@@ -1,6 +1,6 @@
 {% load static i18n %}
 <!DOCTYPE html>
-<html lang="th">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
@@ -142,13 +142,21 @@
         :disabled="processing"
       >
         <span x-text="processing ? '⏳' : '📷'"></span>
-        <span x-text="processing ? 'กำลังประมวลผล' : 'ถ่ายรูป'"></span>
+        <span x-text="processing ? KIOSK_I18N.processing : KIOSK_I18N.takePhoto"></span>
       </button>
     </div>
   </template>
 
 </div>
 {% endif %}
+
+<script>
+/* Translated strings for Alpine runtime use */
+const KIOSK_I18N = {
+  processing: "{% trans 'กำลังประมวลผล' %}",
+  takePhoto:  "{% trans 'ถ่ายรูป' %}",
+};
+</script>
 
 <script>
 /**

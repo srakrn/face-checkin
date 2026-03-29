@@ -16,6 +16,7 @@ import json
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
@@ -35,7 +36,7 @@ def checkin_match(request):
     try:
         session_id = int(request.POST.get("session_id", ""))
     except (TypeError, ValueError):
-        return JsonResponse({"error": "session_id is required and must be an integer."}, status=400)
+        return JsonResponse({"error": _("session_id is required and must be an integer.")}, status=400)
 
     embedding_raw = request.POST.get("embedding", "")
     try:
@@ -43,21 +44,21 @@ def checkin_match(request):
         if not isinstance(embedding, list):
             raise ValueError
     except (json.JSONDecodeError, ValueError):
-        return JsonResponse({"error": "embedding must be a JSON array of floats."}, status=400)
+        return JsonResponse({"error": _("embedding must be a JSON array of floats.")}, status=400)
 
     face_image = request.FILES.get("face_image")
     if face_image is None:
-        return JsonResponse({"error": "face_image is required."}, status=400)
+        return JsonResponse({"error": _("face_image is required.")}, status=400)
 
     session = get_object_or_404(Session, pk=session_id)
 
     if session.state != Session.State.ACTIVE:
-        return JsonResponse({"error": "Session is not active."}, status=409)
+        return JsonResponse({"error": _("Session is not active.")}, status=409)
 
     # Auto-close check
     if session.should_auto_close:
         session.close()
-        return JsonResponse({"error": "Session has been automatically closed."}, status=409)
+        return JsonResponse({"error": _("Session has been automatically closed.")}, status=409)
 
     face_group_id = session.klass.face_group_id
     matched_face = find_best_match(embedding, face_group_id)
@@ -143,7 +144,7 @@ def session_embeddings(request, pk: int):
     data = []
     for face in faces:
         vec = list(
-            map(float, __import__("numpy").frombuffer(bytes(face.embedding), dtype="float32"))
+            map(float, np.frombuffer(bytes(face.embedding), dtype="float32"))
         )
         data.append(
             {

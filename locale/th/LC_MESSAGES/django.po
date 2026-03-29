@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-28 21:30+0700\n"
+"POT-Creation-Date: 2026-03-29 11:06+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,120 +17,143 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-#: templates/index.html
-msgid "เข้าสู่ระบบผู้ดูแล"
-msgstr ""
 
-#: templates/index.html
-msgid "คาบเรียนที่เปิดให้เช็กอิน"
-msgstr ""
+#: apps/checkin/views.py:39
+msgid "session_id is required and must be an integer."
+msgstr "session_id จำเป็นต้องระบุและต้องเป็นจำนวนเต็ม"
 
-#: templates/index.html
-msgid "ยังไม่มีคาบเรียนที่เปิดให้เช็กอิน"
-msgstr ""
+#: apps/checkin/views.py:47
+msgid "embedding must be a JSON array of floats."
+msgstr "embedding ต้องเป็น JSON array ของตัวเลขทศนิยม"
 
-#: templates/base.html:7 templates/sessions/base.html:7
-#: templates/sessions/index.html:4 templates/sessions/report.html:4
-#: templates/sessions/session_list.html:4
-msgid "ระบบเช็กอินด้วยใบหน้า"
-msgstr ""
+#: apps/checkin/views.py:51
+msgid "face_image is required."
+msgstr "จำเป็นต้องระบุ face_image"
 
-#: templates/checkin/kiosk.html:7
-msgid "เช็กอิน"
-msgstr ""
+#: apps/checkin/views.py:56
+msgid "Session is not active."
+msgstr "คาบเรียนนี้ยังไม่เปิดรับการเช็กอิน"
+
+#: apps/checkin/views.py:61
+msgid "Session has been automatically closed."
+msgstr "คาบเรียนนี้ถูกปิดโดยอัตโนมัติแล้ว"
 
 #: templates/checkin/kiosk.html:25
 msgid "ไม่พบคาบเรียนให้เช็กอิน"
-msgstr ""
+msgstr "ไม่พบคาบเรียนให้เช็กอิน"
 
 #: templates/checkin/kiosk.html:36
 msgid "หมดเวลาเช็กอิน"
-msgstr ""
+msgstr "หมดเวลาเช็กอิน"
 
 #: templates/checkin/kiosk.html:71
 msgid "กำลังโหลด…"
-msgstr ""
+msgstr "กำลังโหลด…"
 
 #: templates/checkin/kiosk.html:108
 msgid "รายการหน้าคล้าย"
-msgstr ""
+msgstr "รายการหน้าคล้าย"
 
-#: templates/checkin/kiosk.html:113 templates/sessions/report.html:91
+#: templates/checkin/kiosk.html:113 templates/sessions/report.html:125
 msgid "รหัสประจำตัว"
-msgstr ""
+msgstr "รหัสประจำตัว"
 
-#: templates/checkin/kiosk.html:114 templates/sessions/report.html:90
+#: templates/checkin/kiosk.html:114 templates/sessions/report.html:124
 msgid "ชื่อ"
-msgstr ""
+msgstr "ชื่อ"
 
 #: templates/checkin/kiosk.html:115
 msgid "ความคล้าย"
-msgstr ""
+msgstr "ความคล้าย"
 
-#: templates/checkin/kiosk.html:194
+#: templates/checkin/kiosk.html:156
+msgid "กำลังประมวลผล"
+msgstr "กำลังประมวลผล"
+
+#: templates/checkin/kiosk.html:157
+msgid "ถ่ายรูป"
+msgstr "ถ่ายรูป"
+
+#: templates/checkin/kiosk.html:202
 msgid "กำลังโหลดโมเดลจดจำใบหน้า…"
-msgstr ""
+msgstr "กำลังโหลดโมเดลจดจำใบหน้า…"
 
-#: templates/checkin/kiosk.html:247 templates/checkin/kiosk.html:262
-#: templates/checkin/kiosk.html:274
+#: templates/checkin/kiosk.html:255 templates/checkin/kiosk.html:270
+#: templates/checkin/kiosk.html:282
 msgid "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง"
 msgstr ""
 
-#: templates/checkin/kiosk.html:266
+#: templates/checkin/kiosk.html:274
 msgid "กำลังประมวลผล…"
 msgstr ""
 
-#: templates/checkin/kiosk.html:270
+#: templates/checkin/kiosk.html:278
 msgid "รอให้ออกจากกล้อง"
 msgstr ""
 
-#: templates/checkin/kiosk.html:293
+#: templates/checkin/kiosk.html:301
 msgid "โหลดโมเดลจดจำใบหน้าไม่สำเร็จ"
 msgstr ""
 
-#: templates/checkin/kiosk.html:298
+#: templates/checkin/kiosk.html:306
 msgid "กำลังดึงข้อมูลใบหน้าผู้เข้าร่วม…"
 msgstr ""
 
-#: templates/checkin/kiosk.html:331
+#: templates/checkin/kiosk.html:339
 msgid "ไม่สามารถเข้าถึงกล้องได้"
 msgstr ""
 
-#: templates/checkin/kiosk.html:649
+#: templates/checkin/kiosk.html:655
 msgid "ไม่พบใบหน้าในรูป"
 msgstr ""
 
-#: templates/checkin/kiosk.html:667
+#: templates/checkin/kiosk.html:673
 msgid "ไม่พบใบหน้าที่ตรงกัน กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่"
 msgstr ""
 
-#: templates/checkin/kiosk.html:675
+#: templates/checkin/kiosk.html:681
 msgid "กำลังตรวจสอบ…"
 msgstr ""
 
-#: templates/checkin/kiosk.html:691
+#: templates/checkin/kiosk.html:697
 msgid "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์"
 msgstr ""
 
-#: templates/checkin/kiosk.html:699
+#: templates/checkin/kiosk.html:705
 msgid "เช็กอินไปก่อนหน้านี้แล้ว"
 msgstr ""
 
-#: templates/checkin/kiosk.html:701
+#: templates/checkin/kiosk.html:707
 msgid "เช็กอินสำเร็จ"
 msgstr ""
 
-#: templates/checkin/kiosk.html:704
+#: templates/checkin/kiosk.html:710
 msgid "ไม่พบใบหน้าที่ตรงกัน"
 msgstr ""
 
-#: templates/checkin/kiosk.html:708
+#: templates/checkin/kiosk.html:714
 msgid "เกิดข้อผิดพลาดของเครือข่าย"
 msgstr ""
 
-#: templates/sessions/index.html:4 templates/sessions/index.html:10
-#: templates/sessions/report.html:9 templates/sessions/session_list.html:22
-#: templates/sessions/session_list.html:9
+#: templates/index.html:127
+msgid "เข้าสู่ระบบผู้ดูแล"
+msgstr ""
+
+#: templates/index.html:132
+msgid "คาบเรียนที่เปิดให้เช็กอิน"
+msgstr ""
+
+#: templates/index.html:147 templates/sessions/partials/session_row.html:9
+msgid "เปิดหน้าจอเช็กอิน ↗"
+msgstr ""
+
+#: templates/index.html:155
+msgid "ยังไม่มีคาบเรียนที่เปิดให้เช็กอิน"
+msgstr ""
+
+#: templates/sessions/index.html:4 templates/sessions/index.html:8
+#: templates/sessions/report.html:9 templates/sessions/session_list.html:9
+#: templates/sessions/session_list.html:21
 msgid "รายวิชาทั้งหมด"
 msgstr ""
 
@@ -143,26 +166,22 @@ msgstr ""
 msgid "กลุ่มใบหน้า"
 msgstr ""
 
-#: templates/sessions/index.html:30
+#: templates/sessions/index.html:33
 msgid "ยังไม่มีวิชา"
 msgstr ""
 
-#: templates/sessions/index.html:30
-#: templates/sessions/partials/session_table.html:22
+#: templates/sessions/index.html:33
+#: templates/sessions/partials/session_table.html:24
 msgid "สร้างได้ที่ Admin"
 msgstr ""
 
-#: templates/sessions/partials/session_row.html:9
-msgid "เปิดหน้าจอเช็กอิน ↗"
-msgstr ""
-
 #: templates/sessions/partials/session_row.html:15
-#: templates/sessions/report.html:39
+#: templates/sessions/report.html:49
 msgid "เปิดให้เช็กอิน"
 msgstr ""
 
 #: templates/sessions/partials/session_row.html:17
-#: templates/sessions/report.html:41
+#: templates/sessions/report.html:51
 msgid "ปิดไม่ให้เช็กอิน"
 msgstr ""
 
@@ -179,30 +198,29 @@ msgstr ""
 msgid "แก้ไข"
 msgstr ""
 
-#: templates/sessions/partials/session_table.html:7
+#: templates/sessions/partials/session_table.html:8
 msgid "ชื่อคาบเรียน"
 msgstr ""
 
-#: templates/sessions/partials/session_table.html:8
-#: templates/sessions/report.html:36 templates/sessions/report.html:92
+#: templates/sessions/partials/session_table.html:9
+#: templates/sessions/report.html:46 templates/sessions/report.html:126
 msgid "สถานะ"
 msgstr ""
 
-#: templates/sessions/partials/session_table.html:9
-#: templates/sessions/report.html:47
+#: templates/sessions/partials/session_table.html:10
+#: templates/sessions/report.html:55
 msgid "เวลาเริ่มต้น"
 msgstr ""
 
-#: templates/sessions/partials/session_table.html:10
-#: templates/sessions/report.html:53
+#: templates/sessions/partials/session_table.html:11
 msgid "ปิดอัตโนมัติเมื่อ"
 msgstr ""
 
-#: templates/sessions/partials/session_table.html:11
+#: templates/sessions/partials/session_table.html:12
 msgid "การดำเนินการ"
 msgstr ""
 
-#: templates/sessions/partials/session_table.html:22
+#: templates/sessions/partials/session_table.html:24
 msgid "ยังไม่มีคาบเรียน"
 msgstr ""
 
@@ -210,60 +228,88 @@ msgstr ""
 msgid "วิชา"
 msgstr ""
 
-#: templates/sessions/report.html:23
+#: templates/sessions/report.html:23 templates/sessions/report.html:30
 msgid "ดาวน์โหลด CSV"
 msgstr ""
 
 #: templates/sessions/report.html:26
+msgid "แสดงทั้งหมด"
+msgstr ""
+
+#: templates/sessions/report.html:33
+msgid "แสดงเฉพาะที่ไม่ซ้ำ"
+msgstr ""
+
+#: templates/sessions/report.html:37
 msgid "กลับไปรายการคาบเรียน"
 msgstr ""
 
-#: templates/sessions/report.html:63
+#: templates/sessions/report.html:59
+msgid "เวลาปิด"
+msgstr ""
+
+#: templates/sessions/report.html:70
 msgid "จำนวนการเช็กอิน"
 msgstr ""
 
-#: templates/sessions/report.html:67 templates/sessions/report.html:125
+#: templates/sessions/report.html:78 templates/sessions/report.html:161
 msgid "เทียบใบหน้าได้"
 msgstr ""
 
-#: templates/sessions/report.html:71 templates/sessions/report.html:127
+#: templates/sessions/report.html:86 templates/sessions/report.html:163
 msgid "เทียบใบหน้าไม่ได้"
 msgstr ""
 
-#: templates/sessions/report.html:80
+#: templates/sessions/report.html:94
+msgid "ต้องสงสัย (IP/UA ต่างกัน)"
+msgstr ""
+
+#: templates/sessions/report.html:106
 msgid "ประวัติการเช็กอิน"
 msgstr ""
 
-#: templates/sessions/report.html:89
+#: templates/sessions/report.html:108
+msgid "เฉพาะที่ไม่ซ้ำ"
+msgstr ""
+
+#: templates/sessions/report.html:123
 msgid "ภาพใบหน้า"
 msgstr ""
 
-#: templates/sessions/report.html:93
+#: templates/sessions/report.html:127
 msgid "เวลาเช็กอิน"
 msgstr ""
 
-#: templates/sessions/report.html:103
+#: templates/sessions/report.html:128
+msgid "IP"
+msgstr ""
+
+#: templates/sessions/report.html:139
 #, python-format
 msgid "ภาพใบหน้า การเช็กอิน #%(pk)s"
 msgstr ""
 
-#: templates/sessions/report.html:113
+#: templates/sessions/report.html:149
 msgid "ไม่ทราบ"
 msgstr ""
 
-#: templates/sessions/report.html:137
+#: templates/sessions/report.html:171
+msgid "ต้องสงสัย"
+msgstr ""
+
+#: templates/sessions/report.html:181
 msgid "ยังไม่มีการเช็กอิน"
 msgstr ""
 
 #: templates/sessions/session_list.html:4
-#: templates/sessions/session_list.html:28
+#: templates/sessions/session_list.html:27
 msgid "คาบเรียน"
 msgstr ""
 
-#: templates/sessions/session_list.html:21
+#: templates/sessions/session_list.html:20
 msgid "คาบเรียนใหม่"
 msgstr ""
 
-#: templates/sessions/session_list.html:29
+#: templates/sessions/session_list.html:28
 msgid "กำลังอัปเดต…"
 msgstr ""
