@@ -16,6 +16,7 @@ html, body {
   background: #0f1117;
   color: #f0f0f0;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overscroll-behavior: none;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -28,8 +29,31 @@ html, body {
   inset: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: #000;
+}
+
+.kiosk-fullscreen::before,
+.kiosk-fullscreen::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.kiosk-fullscreen::before {
+  top: 0;
+  height: min(24vh, 180px);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.68), rgba(0, 0, 0, 0));
+}
+
+.kiosk-fullscreen::after {
+  bottom: 0;
+  height: min(28vh, 220px);
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.76), rgba(0, 0, 0, 0));
 }
 
 /* ── Full-screen video (contain = no cropping, letterbox/pillarbox) ── */
@@ -90,8 +114,8 @@ html, body {
 /* ── Top-left session info badge ──────────────────────────── */
 .kiosk-session-badge {
   position: absolute;
-  top: 24px;
-  left: 24px;
+  top: calc(24px + env(safe-area-inset-top, 0px));
+  left: calc(24px + env(safe-area-inset-left, 0px));
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -127,7 +151,7 @@ html, body {
 /* ── Bottom-centre capture area (status + manual button) ──── */
 .kiosk-capture-btn-wrap {
   position: absolute;
-  bottom: 40px;
+  bottom: calc(40px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -135,6 +159,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  width: min(420px, calc(100vw - 48px));
 }
 
 /* Auto-capture status pill */
@@ -148,7 +173,10 @@ html, body {
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid transparent;
   transition: background 0.3s, color 0.3s, border-color 0.3s;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.35;
+  width: 100%;
 }
 
 .kiosk-auto-status.auto-status-ready {
@@ -184,6 +212,7 @@ html, body {
 .kiosk-btn-capture {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 18px 40px;
   font-size: clamp(1rem, 2.5vw, 1.3rem);
@@ -198,6 +227,7 @@ html, body {
   -webkit-backdrop-filter: blur(6px);
   transition: background 0.2s, transform 0.15s, opacity 0.2s;
   white-space: nowrap;
+  width: 100%;
 }
 
 .kiosk-btn-capture:hover:not(:disabled) {
@@ -217,8 +247,8 @@ html, body {
 /* ── Top-right check-in result pop-up ─────────────────────── */
 .kiosk-result-popup {
   position: absolute;
-  top: 24px;
-  right: 24px;
+  top: calc(24px + env(safe-area-inset-top, 0px));
+  right: calc(24px + env(safe-area-inset-right, 0px));
   z-index: 10;
   width: min(340px, 90vw);
   display: flex;
@@ -288,6 +318,7 @@ html, body {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
+  table-layout: fixed;
 }
 
 .kiosk-top-matches-table th {
@@ -302,6 +333,9 @@ html, body {
   padding: 5px 6px;
   color: #cbd5e1;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kiosk-top-matches-table tr:last-child td {
@@ -328,8 +362,12 @@ html, body {
   align-items: center;
   justify-content: flex-start;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
-  padding: 24px 16px 16px;
+  padding: calc(24px + env(safe-area-inset-top, 0px))
+    calc(16px + env(safe-area-inset-right, 0px))
+    calc(16px + env(safe-area-inset-bottom, 0px))
+    calc(16px + env(safe-area-inset-left, 0px));
   gap: 16px;
   position: relative;
 }
@@ -404,5 +442,169 @@ html, body {
     top: 12px;
     right: 12px;
     width: min(280px, 85vw);
+  }
+}
+
+@media (max-width: 480px) {
+  .kiosk-session-badge {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    max-width: none;
+    padding: 10px 14px;
+  }
+
+  .kiosk-session-name {
+    font-size: 0.96rem;
+  }
+
+  .kiosk-class-name {
+    font-size: 0.8rem;
+  }
+
+  .kiosk-result-popup {
+    top: auto;
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(106px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    gap: 8px;
+  }
+
+  .kiosk-status-card,
+  .kiosk-top-matches {
+    border-radius: 12px;
+  }
+
+  .kiosk-status-card {
+    padding: 12px 14px;
+    font-size: 0.92rem;
+  }
+
+  .kiosk-top-matches {
+    padding: 10px 12px;
+    max-height: min(26vh, 180px);
+    overflow: auto;
+  }
+
+  .kiosk-top-matches-table {
+    font-size: 0.75rem;
+  }
+
+  .kiosk-top-matches-table th,
+  .kiosk-top-matches-table td {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .kiosk-top-matches-table th:first-child,
+  .kiosk-top-matches-table td:first-child {
+    display: none;
+  }
+
+  .kiosk-capture-btn-wrap {
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    transform: none;
+    width: auto;
+    gap: 8px;
+  }
+
+  .kiosk-auto-status {
+    padding: 8px 14px;
+    font-size: 0.84rem;
+  }
+
+  .kiosk-btn-capture {
+    padding: 14px 18px;
+    font-size: 1rem;
+  }
+
+  .kiosk-state-panel {
+    padding: 20px 12px;
+    gap: 16px;
+  }
+
+  .kiosk-state-icon {
+    font-size: 4rem;
+  }
+
+  .kiosk-state-title {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-height: 430px) and (orientation: landscape) {
+  .kiosk-session-badge {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: calc(10px + env(safe-area-inset-left, 0px));
+    max-width: min(44vw, 280px);
+    padding: 8px 12px;
+  }
+
+  .kiosk-session-name {
+    font-size: 0.88rem;
+  }
+
+  .kiosk-class-name {
+    font-size: 0.74rem;
+  }
+
+  .kiosk-result-popup {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    right: calc(10px + env(safe-area-inset-right, 0px));
+    width: min(42vw, 280px);
+    gap: 6px;
+  }
+
+  .kiosk-status-card {
+    padding: 10px 12px;
+    font-size: 0.84rem;
+  }
+
+  .kiosk-top-matches {
+    padding: 8px 10px;
+    max-height: 42vh;
+    overflow: auto;
+  }
+
+  .kiosk-top-matches-title {
+    margin-bottom: 6px;
+  }
+
+  .kiosk-top-matches-table {
+    font-size: 0.72rem;
+  }
+
+  .kiosk-top-matches-table th,
+  .kiosk-top-matches-table td {
+    padding: 3px 4px;
+  }
+
+  .kiosk-top-matches-table th:first-child,
+  .kiosk-top-matches-table td:first-child {
+    display: none;
+  }
+
+  .kiosk-top-matches-table th:nth-child(2),
+  .kiosk-top-matches-table td:nth-child(2) {
+    max-width: 72px;
+  }
+
+  .kiosk-capture-btn-wrap {
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    width: min(360px, calc(100vw - 180px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
+    gap: 6px;
+  }
+
+  .kiosk-auto-status {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+  }
+
+  .kiosk-btn-capture {
+    padding: 11px 16px;
+    font-size: 0.94rem;
   }
 }

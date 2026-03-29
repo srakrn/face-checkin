@@ -10,6 +10,7 @@
     body {
       margin: 0;
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       align-items: stretch;
       background: #f8f9fa;
@@ -116,6 +117,64 @@
       color: #6c757d;
       padding: 4rem 0;
       font-size: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        display: block;
+        min-height: 100dvh;
+      }
+
+      .left-pane {
+        display: none;
+      }
+
+      .right-pane {
+        min-height: 100dvh;
+        padding: 1.25rem 1rem 1.5rem;
+      }
+
+      .right-pane h2 {
+        margin-bottom: 1rem;
+        font-size: 1.15rem;
+      }
+
+      .session-list {
+        gap: 0.75rem;
+      }
+
+      .session-card {
+        padding: 1rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.85rem;
+      }
+
+      .session-card .session-name {
+        font-size: 0.96rem;
+        line-height: 1.35;
+      }
+
+      .session-card .session-meta {
+        line-height: 1.45;
+        word-break: break-word;
+      }
+
+      .session-card > div:last-child {
+        width: 100%;
+      }
+
+      .session-card .kiosk-link {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: 0.8rem 1rem;
+      }
+
+      .empty-state {
+        padding: 2.5rem 0 1rem;
+        font-size: 0.95rem;
+      }
     }
   </style>
 </head>
