@@ -11,8 +11,11 @@ import json
 
 import numpy as np
 import pytest
+from django.contrib.auth import get_user_model
 from django.test import Client
+from django.template.loader import render_to_string
 from django.utils import timezone
+from django.utils.translation import override
 
 from apps.checkin.models import CheckIn
 from apps.classes.models import Class
@@ -48,6 +51,15 @@ def _fake_image(name: str = "face.jpg") -> io.BytesIO:
 @pytest.fixture
 def client():
     return Client()
+
+
+@pytest.fixture
+def staff_user(db):
+    return get_user_model().objects.create_user(
+        username="staff",
+        password="password123",
+        is_staff=True,
+    )
 
 
 @pytest.fixture
@@ -208,3 +220,53 @@ class TestSessionReport:
     def test_post_method_not_allowed(self, client, active_session):
         response = client.post(f"/api/sessions/{active_session.pk}/report/")
         assert response.status_code == 405
+
+
+@pytest.mark.django_db
+class TestSessionReportPage:
+    def test_renders_thai_translations_and_face_image(
+        self, client, staff_user, active_session, checkin_matched
+    ):
+        client.force_login(staff_user)
+
+        with override("th"):
+            response = client.get(f"/sessions/{active_session.pk}/report/")
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert "รายงาน" in content
+        assert "ประวัติการเช็กอิน" in content
+        assert f'/sessions/checkins/{checkin_matched.pk}/image/' in content
+        assert 'alt="ภาพใบหน้าสำหรับการเช็กอิน #' in content
+
+    def test_checkin_image_requires_login(self, client, checkin_matched):
+        response = client.get(f"/sessions/checkins/{checkin_matched.pk}/image/")
+        assert response.status_code == 302
+        assert "login" in response["Location"]
+
+    def test_checkin_image_streams_for_authenticated_user(
+        self, client, staff_user, checkin_matched
+    ):
+        client.force_login(staff_user)
+        response = client.get(f"/sessions/checkins/{checkin_matched.pk}/image/")
+
+        assert response.status_code == 200
+        assert response["Content-Type"] == "image/jpeg"
+
+
+class TestErrorTemplates:
+    def test_404_template_renders_thai_copy(self):
+        with override("th"):
+            content = render_to_string("404.html")
+
+        assert "ไม่พบหน้าที่ต้องการ" in content
+        assert "หน้าที่คุณกำลังมองหาไม่มีอยู่" in content
+        assert "กลับหน้าหลัก" in content
+
+    def test_403_template_renders_thai_copy(self):
+        with override("th"):
+            content = render_to_string("403.html")
+
+        assert "ไม่มีสิทธิ์เข้าถึง" in content
+        assert "คุณไม่มีสิทธิ์เข้าถึงหน้านี้" in content
+        assert "กลับหน้าหลัก" in content

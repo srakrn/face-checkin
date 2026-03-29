@@ -1,40 +1,40 @@
 {% extends "sessions/base.html" %}
 {% load static i18n %}
 
-{% block title %}{% trans "รายงาน" %}: {{ session.name }} - SchimudtCHECK{% endblock %}
+{% block title %}{% trans "Report" %}: {{ session.name }} - SchimudtCHECK{% endblock %}
 
 {% block content %}
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="{% url 'sessions:index' %}">{% trans "รายวิชาทั้งหมด" %}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'sessions:index' %}">{% trans "All Classes" %}</a></li>
       <li class="breadcrumb-item"><a href="{% url 'sessions:class_session_list' session.klass.pk %}">{{ session.klass.name }}</a></li>
-      <li class="breadcrumb-item active" aria-current="page">{% trans "รายงาน" %}</li>
+      <li class="breadcrumb-item active" aria-current="page">{% trans "Report" %}</li>
     </ol>
   </nav>
 
   <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
       <h1 class="h3 mb-1">{{ session.name }}</h1>
-      <div class="text-muted small">{% trans "วิชา" %}: {{ session.klass.name }}</div>
+      <div class="text-muted small">{% trans "Class" %}: {{ session.klass.name }}</div>
     </div>
     <div class="d-flex gap-2 flex-wrap">
       {% if unique_only %}
         <a href="{% url 'sessions:report_csv' session.pk %}?unique=1" class="btn btn-primary btn-sm">
-          ⬇ {% trans "ดาวน์โหลด CSV" %}
+          ⬇ {% trans "Download CSV" %}
         </a>
         <a href="{% url 'sessions:report_page' session.pk %}" class="btn btn-outline-secondary btn-sm">
-          {% trans "แสดงทั้งหมด" %}
+          {% trans "Show All" %}
         </a>
       {% else %}
         <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-primary btn-sm">
-          ⬇ {% trans "ดาวน์โหลด CSV" %}
+          ⬇ {% trans "Download CSV" %}
         </a>
         <a href="{% url 'sessions:report_page' session.pk %}?unique=1" class="btn btn-outline-info btn-sm">
-          👤 {% trans "แสดงเฉพาะที่ไม่ซ้ำ" %}
+          👤 {% trans "Show Unique Only" %}
         </a>
       {% endif %}
       <a href="{% url 'sessions:class_session_list' session.klass.pk %}" class="btn btn-outline-secondary btn-sm">
-        ← {% trans "กลับไปรายการคาบเรียน" %}
+        ← {% trans "Back to Sessions" %}
       </a>
     </div>
   </div>
@@ -43,20 +43,20 @@
   <div class="card shadow-sm mb-4">
     <div class="card-body">
       <dl class="mb-3" style="display:grid; grid-template-columns: max-content 1fr; gap: 0.25rem 1rem;">
-        <dt class="text-muted small fw-normal">{% trans "สถานะ" %}</dt>
+        <dt class="text-muted small fw-normal">{% trans "Status" %}</dt>
         <dd class="mb-0">
           {% if session.state == "active" %}
-            <span class="badge text-bg-success">{% trans "เปิดให้เช็กอิน" %}</span>
+            <span class="badge text-bg-success">{% trans "Open for Check-in" %}</span>
           {% else %}
-            <span class="badge text-bg-secondary">{% trans "ปิดไม่ให้เช็กอิน" %}</span>
+            <span class="badge text-bg-secondary">{% trans "Closed for Check-in" %}</span>
           {% endif %}
         </dd>
         {% if session.scheduled_at %}
-          <dt class="text-muted small fw-normal">{% trans "เวลาเริ่มต้น" %}</dt>
+          <dt class="text-muted small fw-normal">{% trans "Start Time" %}</dt>
           <dd class="mb-0 small">{{ session.scheduled_at }}</dd>
         {% endif %}
         {% if session.auto_close_at %}
-          <dt class="text-muted small fw-normal">{% trans "เวลาปิด" %}</dt>
+          <dt class="text-muted small fw-normal">{% trans "Close Time" %}</dt>
           <dd class="mb-0 small">{{ session.auto_close_at }}</dd>
         {% endif %}
       </dl>
@@ -67,7 +67,7 @@
           <div class="card text-center border-0 bg-light">
             <div class="card-body">
               <div class="display-6 fw-bold">{{ checkins|length }}</div>
-              <div class="text-muted small">{% trans "จำนวนการเช็กอิน" %}</div>
+              <div class="text-muted small">{% trans "Check-in Count" %}</div>
             </div>
           </div>
         </div>
@@ -75,7 +75,7 @@
           <div class="card text-center border-0 bg-success-subtle">
             <div class="card-body">
               <div class="display-6 fw-bold text-success">{{ matched_count }}</div>
-              <div class="text-muted small">{% trans "เทียบใบหน้าได้" %}</div>
+              <div class="text-muted small">{% trans "Matched" %}</div>
             </div>
           </div>
         </div>
@@ -83,7 +83,7 @@
           <div class="card text-center border-0 bg-danger-subtle">
             <div class="card-body">
               <div class="display-6 fw-bold text-danger">{{ unmatched_count }}</div>
-              <div class="text-muted small">{% trans "เทียบใบหน้าไม่ได้" %}</div>
+              <div class="text-muted small">{% trans "Unmatched" %}</div>
             </div>
           </div>
         </div>
@@ -91,7 +91,7 @@
           <div class="card text-center border-0 bg-warning-subtle">
             <div class="card-body">
               <div class="display-6 fw-bold text-warning">{{ anomaly_count }}</div>
-              <div class="text-muted small">⚠ {% trans "ต้องสงสัย (IP/UA ต่างกัน)" %}</div>
+              <div class="text-muted small">⚠ {% trans "Suspicious (Different IP/UA)" %}</div>
             </div>
           </div>
         </div>
@@ -103,9 +103,9 @@
   <div class="card shadow-sm">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h2 class="h5 mb-0">
-        {% trans "ประวัติการเช็กอิน" %}
+        {% trans "Check-in History" %}
         {% if unique_only %}
-          <span class="badge text-bg-info ms-2">👤 {% trans "เฉพาะที่ไม่ซ้ำ" %}</span>
+          <span class="badge text-bg-info ms-2">👤 {% trans "Unique Only" %}</span>
         {% endif %}
       </h2>
       {% if unique_only %}
@@ -120,11 +120,11 @@
           <thead class="table-light">
             <tr>
               <th>#</th>
-              <th>{% trans "ภาพใบหน้า" %}</th>
-              <th>{% trans "ชื่อ" %}</th>
-              <th>{% trans "รหัสประจำตัว" %}</th>
-              <th>{% trans "สถานะ" %}</th>
-              <th>{% trans "เวลาเช็กอิน" %}</th>
+              <th>{% trans "Face Image" %}</th>
+              <th>{% trans "Name" %}</th>
+              <th>{% trans "Custom ID" %}</th>
+              <th>{% trans "Status" %}</th>
+              <th>{% trans "Check-in Time" %}</th>
               <th>{% trans "IP" %}</th>
               <th></th>
             </tr>
@@ -135,8 +135,8 @@
                 <td>{{ forloop.counter }}</td>
                 <td>
                   {% if checkin.raw_face_image %}
-                    <img src="{{ checkin.raw_face_image.url }}"
-                         alt="{% blocktrans with pk=checkin.pk %}ภาพใบหน้า การเช็กอิน #{{ pk }}{% endblocktrans %}"
+                    <img src="{% url 'sessions:checkin_image' checkin.pk %}"
+                         alt="{% blocktrans with pk=checkin.pk %}Face image for check-in #{{ pk }}{% endblocktrans %}"
                          style="width:64px; height:64px; object-fit:cover; border-radius:6px;">
                   {% else %}
                     <span class="text-muted">—</span>
@@ -146,7 +146,7 @@
                   {% if checkin.face %}
                     {{ checkin.face.name }}
                   {% else %}
-                    <span class="text-muted">{% trans "ไม่ทราบ" %}</span>
+                    <span class="text-muted">{% trans "Unknown" %}</span>
                   {% endif %}
                 </td>
                 <td>
@@ -158,9 +158,9 @@
                 </td>
                 <td>
                   {% if checkin.matched %}
-                    <span class="badge text-bg-success">✓ {% trans "เทียบใบหน้าได้" %}</span>
+                    <span class="badge text-bg-success">✓ {% trans "Matched" %}</span>
                   {% else %}
-                    <span class="badge text-bg-danger">✗ {% trans "เทียบใบหน้าไม่ได้" %}</span>
+                    <span class="badge text-bg-danger">✗ {% trans "Unmatched" %}</span>
                   {% endif %}
                 </td>
                 <td>{{ checkin.checked_in_at }}</td>
@@ -168,7 +168,7 @@
                 <td>
                   {% if checkin.anomaly_reasons %}
                     <span class="badge text-bg-warning text-dark"
-                          title="{{ checkin.anomaly_reasons|join:', ' }}">⚠ {% trans "ต้องสงสัย" %}</span>
+                          title="{{ checkin.anomaly_reasons|join:', ' }}">⚠ {% trans "Suspicious" %}</span>
                   {% endif %}
                 </td>
               </tr>
@@ -178,7 +178,7 @@
       </div>
     {% else %}
       <div class="card-body text-center text-muted py-5">
-        <p class="mb-0">{% trans "ยังไม่มีการเช็กอิน" %}</p>
+        <p class="mb-0">{% trans "No check-ins yet" %}</p>
       </div>
     {% endif %}
   </div>

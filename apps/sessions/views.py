@@ -6,8 +6,10 @@ import csv
 import json
 
 from apps.checkin.anomaly import detect_anomalies
+from apps.checkin.models import CheckIn
 
 from django.contrib.auth.decorators import login_required
+from django.http import FileResponse
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET, require_POST
@@ -174,3 +176,13 @@ def session_report_csv(request, pk: int):
             ]
         )
     return response
+
+
+@login_required
+@require_GET
+def checkin_image(request, pk: int):
+    """GET /sessions/checkins/<pk>/image/ — stream a check-in image to authenticated users."""
+    checkin = get_object_or_404(CheckIn.objects.select_related("session"), pk=pk)
+    image_field = checkin.raw_face_image
+    image_field.open("rb")
+    return FileResponse(image_field, content_type="image/jpeg")
