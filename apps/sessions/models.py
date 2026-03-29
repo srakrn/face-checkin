@@ -70,12 +70,17 @@ class Session(models.Model):
     def should_auto_open(self) -> bool:
         """Return True if the session should be auto-opened right now.
 
-        A closed session with a scheduled_at in the past should be re-opened.
+        Only reopen sessions whose scheduled time has arrived and whose
+        auto-close time has not already passed.
         """
         return (
             self.state == self.State.CLOSED
             and self.scheduled_at is not None
             and timezone.now() >= self.scheduled_at
+            and (
+                self.auto_close_at is None
+                or timezone.now() < self.auto_close_at
+            )
         )
 
     @property

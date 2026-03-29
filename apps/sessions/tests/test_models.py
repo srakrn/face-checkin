@@ -142,6 +142,12 @@ class TestShouldAutoOpen:
         assert closed_session.scheduled_at <= timezone.now()
         assert closed_session.should_auto_open is True
 
+    def test_closed_session_past_auto_close_at_returns_false(self, closed_session):
+        closed_session.scheduled_at = timezone.now() - timedelta(hours=2)
+        closed_session.auto_close_at = timezone.now() - timedelta(hours=1)
+        closed_session.save()
+        assert closed_session.should_auto_open is False
+
 
 # ---------------------------------------------------------------------------
 # should_auto_close property

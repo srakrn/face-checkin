@@ -84,6 +84,22 @@ class TestAutoOpenSessions:
         session.refresh_from_db()
         assert session.state == Session.State.CLOSED
 
+    def test_does_not_reopen_session_after_auto_close_time_has_passed(self, klass):
+        past_start = timezone.now() - timedelta(hours=2)
+        past_end = timezone.now() - timedelta(hours=1)
+        session = Session.objects.create(
+            klass=klass,
+            name="Expired Session",
+            scheduled_at=past_start,
+            auto_close_at=past_end,
+        )
+        session.close()
+
+        _run_command()
+
+        session.refresh_from_db()
+        assert session.state == Session.State.CLOSED
+
     def test_does_not_open_closed_session_without_scheduled_at(self, klass):
         session = _make_closed_session(klass, "No Schedule", scheduled_at=None)
 
