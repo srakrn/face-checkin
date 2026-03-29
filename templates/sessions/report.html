@@ -182,32 +182,63 @@
                             title="{{ checkin.anomaly_reasons|join:', ' }}">⚠ {% trans "Suspicious" %}</span>
                     {% endif %}
 
-                    <form method="post" action="{% url 'sessions:checkin_remap' checkin.pk %}" class="d-flex gap-2 flex-wrap">
-                      {% csrf_token %}
-                      {% if unique_only %}
-                        <input type="hidden" name="unique" value="1">
-                      {% endif %}
-                      <select name="face_id" class="form-select form-select-sm" aria-label="{% trans 'Remap to participant' %}" {% if not face_options %}disabled{% endif %}>
-                        {% for face in face_options %}
-                          <option value="{{ face.pk }}"{% if checkin.face_id == face.pk %} selected{% endif %}>
-                            {{ face.name }}{% if face.custom_id %} ({{ face.custom_id }}){% endif %}
-                          </option>
-                        {% endfor %}
-                      </select>
-                      <button type="submit" class="btn btn-outline-primary btn-sm" {% if not face_options %}disabled{% endif %}>
-                        {% trans "Remap" %}
-                      </button>
-                    </form>
+                    <div class="d-flex gap-2">
+                      <button
+                        type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#remapCheckinModal{{ checkin.pk }}"
+                        aria-label="{% trans 'Remap check-in' %}"
+                        title="{% trans 'Remap check-in' %}"
+                        {% if not face_options %}disabled{% endif %}
+                      >✏️</button>
 
-                    <form method="post" action="{% url 'sessions:checkin_delete' checkin.pk %}" onsubmit="return confirm('{% trans "Delete this check-in?" %}');">
-                      {% csrf_token %}
-                      {% if unique_only %}
-                        <input type="hidden" name="unique" value="1">
-                      {% endif %}
-                      <button type="submit" class="btn btn-outline-danger btn-sm">
-                        {% trans "Delete" %}
-                      </button>
-                    </form>
+                      <form method="post" action="{% url 'sessions:checkin_delete' checkin.pk %}" onsubmit="return confirm('{% trans "Delete this check-in?" %}');">
+                        {% csrf_token %}
+                        {% if unique_only %}
+                          <input type="hidden" name="unique" value="1">
+                        {% endif %}
+                        <button
+                          type="submit"
+                          class="btn btn-outline-danger btn-sm"
+                          aria-label="{% trans 'Delete check-in' %}"
+                          title="{% trans 'Delete check-in' %}"
+                        >🗑️</button>
+                      </form>
+                    </div>
+                  </div>
+
+                  <div class="modal fade" id="remapCheckinModal{{ checkin.pk }}" tabindex="-1" aria-labelledby="remapCheckinModalLabel{{ checkin.pk }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <form method="post" action="{% url 'sessions:checkin_remap' checkin.pk %}">
+                          {% csrf_token %}
+                          {% if unique_only %}
+                            <input type="hidden" name="unique" value="1">
+                          {% endif %}
+                          <div class="modal-header">
+                            <h3 class="modal-title h5" id="remapCheckinModalLabel{{ checkin.pk }}">{% trans "Remap Check-in" %}</h3>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
+                          </div>
+                          <div class="modal-body">
+                            <div class="mb-3">
+                              <label for="faceSelect{{ checkin.pk }}" class="form-label">{% trans "Remap to participant" %}</label>
+                              <select id="faceSelect{{ checkin.pk }}" name="face_id" class="form-select" {% if not face_options %}disabled{% endif %}>
+                                {% for face in face_options %}
+                                  <option value="{{ face.pk }}"{% if checkin.face_id == face.pk %} selected{% endif %}>
+                                    {{ face.name }}{% if face.custom_id %} ({{ face.custom_id }}){% endif %}
+                                  </option>
+                                {% endfor %}
+                              </select>
+                            </div>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                            <button type="submit" class="btn btn-primary" {% if not face_options %}disabled{% endif %}>{% trans "Save" %}</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
                   </div>
                 </td>
               </tr>

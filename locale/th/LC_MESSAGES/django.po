@@ -360,6 +360,30 @@ msgstr "ลบรายการเช็กอินนี้หรือไม
 msgid "Delete"
 msgstr "ลบ"
 
+#: templates/sessions/report.html:189
+msgid "Remap check-in"
+msgstr "ย้ายชื่อการเช็กอิน"
+
+#: templates/sessions/report.html:190
+msgid "Delete check-in"
+msgstr "ลบการเช็กอิน"
+
+#: templates/sessions/report.html:191
+msgid "Remap Check-in"
+msgstr "ย้ายชื่อการเช็กอิน"
+
+#: templates/sessions/report.html:192
+msgid "Close"
+msgstr "ปิด"
+
+#: templates/sessions/report.html:193
+msgid "Cancel"
+msgstr "ยกเลิก"
+
+#: templates/sessions/report.html:194
+msgid "Save"
+msgstr "บันทึก"
+
 #: templates/sessions/session_list.html:4
 #: templates/sessions/session_list.html:27
 msgid "คาบเรียน"
