@@ -39,6 +39,16 @@
     </div>
   </div>
 
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} mb-2" role="alert">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
   {# ---- Meta info ---- #}
   <div class="card shadow-sm mb-4">
     <div class="card-body">
@@ -126,12 +136,12 @@
               <th>{% trans "Status" %}</th>
               <th>{% trans "Check-in Time" %}</th>
               <th>{% trans "IP" %}</th>
-              <th></th>
+              <th>{% trans "Actions" %}</th>
             </tr>
           </thead>
           <tbody>
             {% for checkin in checkins %}
-              <tr{% if checkin.anomaly_reasons %} class="table-warning"{% endif %}>
+              <tr{% if checkin.anomaly_reasons %} class="table-warning"{% endif %} id="checkin-{{ checkin.pk }}">
                 <td>{{ forloop.counter }}</td>
                 <td>
                   {% if checkin.raw_face_image %}
@@ -166,10 +176,39 @@
                 <td>{{ checkin.checked_in_at }}</td>
                 <td><code class="text-muted small">{{ checkin.ip_address|default:"—" }}</code></td>
                 <td>
-                  {% if checkin.anomaly_reasons %}
-                    <span class="badge text-bg-warning text-dark"
-                          title="{{ checkin.anomaly_reasons|join:', ' }}">⚠ {% trans "Suspicious" %}</span>
-                  {% endif %}
+                  <div class="d-flex flex-column gap-2" style="min-width: 15rem;">
+                    {% if checkin.anomaly_reasons %}
+                      <span class="badge text-bg-warning text-dark align-self-start"
+                            title="{{ checkin.anomaly_reasons|join:', ' }}">⚠ {% trans "Suspicious" %}</span>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'sessions:checkin_remap' checkin.pk %}" class="d-flex gap-2 flex-wrap">
+                      {% csrf_token %}
+                      {% if unique_only %}
+                        <input type="hidden" name="unique" value="1">
+                      {% endif %}
+                      <select name="face_id" class="form-select form-select-sm" aria-label="{% trans 'Remap to participant' %}" {% if not face_options %}disabled{% endif %}>
+                        {% for face in face_options %}
+                          <option value="{{ face.pk }}"{% if checkin.face_id == face.pk %} selected{% endif %}>
+                            {{ face.name }}{% if face.custom_id %} ({{ face.custom_id }}){% endif %}
+                          </option>
+                        {% endfor %}
+                      </select>
+                      <button type="submit" class="btn btn-outline-primary btn-sm" {% if not face_options %}disabled{% endif %}>
+                        {% trans "Remap" %}
+                      </button>
+                    </form>
+
+                    <form method="post" action="{% url 'sessions:checkin_delete' checkin.pk %}" onsubmit="return confirm('{% trans "Delete this check-in?" %}');">
+                      {% csrf_token %}
+                      {% if unique_only %}
+                        <input type="hidden" name="unique" value="1">
+                      {% endif %}
+                      <button type="submit" class="btn btn-outline-danger btn-sm">
+                        {% trans "Delete" %}
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             {% endfor %}

@@ -93,6 +93,16 @@ def enrolled_face(face_group):
 
 
 @pytest.fixture
+def second_enrolled_face(face_group):
+    return Face.objects.create(
+        face_group=face_group,
+        name="Bob",
+        custom_id="bob-002",
+        embedding=_make_embedding_bytes(_unit_vec(128, 1)),
+    )
+
+
+@pytest.fixture
 def checkin_matched(active_session, enrolled_face):
     checkin = CheckIn(
         session=active_session,
@@ -239,6 +249,19 @@ class TestSessionReportPage:
         assert f'/sessions/checkins/{checkin_matched.pk}/image/' in content
         assert 'alt="ภาพใบหน้าสำหรับการเช็กอิน #' in content
 
+    def test_renders_remap_and_delete_controls(
+        self, client, staff_user, active_session, checkin_matched, second_enrolled_face
+    ):
+        client.force_login(staff_user)
+
+        response = client.get(f"/sessions/{active_session.pk}/report/")
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert f'/sessions/checkins/{checkin_matched.pk}/remap/' in content
+        assert f'/sessions/checkins/{checkin_matched.pk}/delete/' in content
+        assert "Bob (bob-002)" in content
+
     def test_checkin_image_requires_login(self, client, checkin_matched):
         response = client.get(f"/sessions/checkins/{checkin_matched.pk}/image/")
         assert response.status_code == 302
@@ -252,6 +275,92 @@ class TestSessionReportPage:
 
         assert response.status_code == 200
         assert response["Content-Type"] == "image/jpeg"
+
+
+@pytest.mark.django_db
+class TestSessionReportActions:
+    def test_checkin_remap_requires_login(self, client, checkin_matched, second_enrolled_face):
+        response = client.post(
+            f"/sessions/checkins/{checkin_matched.pk}/remap/",
+            {"face_id": second_enrolled_face.pk},
+        )
+
+        assert response.status_code == 302
+        assert "login" in response["Location"]
+
+    def test_checkin_remaps_to_face_in_same_group(
+        self, client, staff_user, checkin_matched, second_enrolled_face
+    ):
+        client.force_login(staff_user)
+
+        response = client.post(
+            f"/sessions/checkins/{checkin_matched.pk}/remap/",
+            {"face_id": second_enrolled_face.pk},
+        )
+
+        checkin_matched.refresh_from_db()
+        assert response.status_code == 302
+        assert checkin_matched.face == second_enrolled_face
+        assert checkin_matched.matched is True
+
+    def test_checkin_remap_preserves_unique_filter(
+        self, client, staff_user, checkin_matched, second_enrolled_face
+    ):
+        client.force_login(staff_user)
+
+        response = client.post(
+            f"/sessions/checkins/{checkin_matched.pk}/remap/",
+            {"face_id": second_enrolled_face.pk, "unique": "1"},
+        )
+
+        assert response.status_code == 302
+        assert response["Location"].endswith(f"/sessions/{checkin_matched.session_id}/report/?unique=1")
+
+    def test_checkin_remap_rejects_face_from_another_group(
+        self, client, staff_user, checkin_matched, db
+    ):
+        client.force_login(staff_user)
+        other_group = FaceGroup.objects.create(name="Other Group")
+        outsider = Face.objects.create(
+            face_group=other_group,
+            name="Mallory",
+            custom_id="mallory-003",
+            embedding=_make_embedding_bytes(_unit_vec(128, 2)),
+        )
+
+        response = client.post(
+            f"/sessions/checkins/{checkin_matched.pk}/remap/",
+            {"face_id": outsider.pk},
+        )
+
+        checkin_matched.refresh_from_db()
+        assert response.status_code == 404
+        assert checkin_matched.face.name == "Alice"
+
+    def test_checkin_delete_requires_login(self, client, checkin_matched):
+        response = client.post(f"/sessions/checkins/{checkin_matched.pk}/delete/")
+
+        assert response.status_code == 302
+        assert "login" in response["Location"]
+
+    def test_checkin_delete_removes_checkin(self, client, staff_user, checkin_matched):
+        client.force_login(staff_user)
+
+        response = client.post(f"/sessions/checkins/{checkin_matched.pk}/delete/")
+
+        assert response.status_code == 302
+        assert not CheckIn.objects.filter(pk=checkin_matched.pk).exists()
+
+    def test_checkin_delete_preserves_unique_filter(self, client, staff_user, checkin_matched):
+        client.force_login(staff_user)
+
+        response = client.post(
+            f"/sessions/checkins/{checkin_matched.pk}/delete/",
+            {"unique": "1"},
+        )
+
+        assert response.status_code == 302
+        assert response["Location"].endswith(f"/sessions/{checkin_matched.session_id}/report/?unique=1")
 
 
 class TestErrorTemplates:

@@ -37,6 +37,19 @@ msgstr "คาบเรียนนี้ยังไม่เปิดรับ
 msgid "Session has been automatically closed."
 msgstr "คาบเรียนนี้ถูกปิดโดยอัตโนมัติแล้ว"
 
+#: apps/sessions/views.py:207
+msgid "Please choose a participant."
+msgstr "กรุณาเลือกผู้เข้าร่วม"
+
+#: apps/sessions/views.py:220
+#, python-format
+msgid "Check-in remapped to \"%(name)s\"."
+msgstr "ย้ายการเช็กอินไปยัง \"%(name)s\" แล้ว"
+
+#: apps/sessions/views.py:234
+msgid "Check-in deleted."
+msgstr "ลบรายการเช็กอินแล้ว"
+
 #: templates/checkin/kiosk.html:25
 msgid "ไม่พบคาบเรียนให้เช็กอิน"
 msgstr "ไม่พบคาบเรียนให้เช็กอิน"
@@ -310,6 +323,10 @@ msgstr "เวลาเช็กอิน"
 msgid "IP"
 msgstr "IP"
 
+#: templates/sessions/report.html:129
+msgid "Actions"
+msgstr "การดำเนินการ"
+
 #: templates/sessions/report.html:139
 #, python-format
 msgid "Face image for check-in #%(pk)s"
@@ -326,6 +343,22 @@ msgstr "ต้องสงสัย"
 #: templates/sessions/report.html:181
 msgid "No check-ins yet"
 msgstr "ยังไม่มีการเช็กอิน"
+
+#: templates/sessions/report.html:185
+msgid "Remap to participant"
+msgstr "ย้ายชื่อไปคนอื่น"
+
+#: templates/sessions/report.html:186
+msgid "Remap"
+msgstr "ย้ายชื่อ"
+
+#: templates/sessions/report.html:187
+msgid "Delete this check-in?"
+msgstr "ลบรายการเช็กอินนี้หรือไม่"
+
+#: templates/sessions/report.html:188
+msgid "Delete"
+msgstr "ลบ"
 
 #: templates/sessions/session_list.html:4
 #: templates/sessions/session_list.html:27

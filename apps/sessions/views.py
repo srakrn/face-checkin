@@ -7,11 +7,15 @@ import json
 
 from apps.checkin.anomaly import detect_anomalies
 from apps.checkin.models import CheckIn
+from apps.faces.models import Face
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import FileResponse
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.classes.models import Class
@@ -117,6 +121,13 @@ def _deduplicate_checkins(checkins):
     return result
 
 
+def _report_page_url(session_pk: int, unique_only: bool) -> str:
+    url = reverse("sessions:report_page", args=[session_pk])
+    if unique_only:
+        return f"{url}?unique=1"
+    return url
+
+
 @login_required
 def session_report_page(request, pk: int):
     """GET /sessions/<pk>/report/ — HTML report page for a session."""
@@ -124,6 +135,7 @@ def session_report_page(request, pk: int):
     unique_only = request.GET.get("unique") == "1"
     all_checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
     checkins = _deduplicate_checkins(all_checkins) if unique_only else all_checkins
+    face_options = list(session.klass.face_group.faces.order_by("name", "custom_id"))
     matched_count = sum(1 for c in checkins if c.matched)
     unmatched_count = len(checkins) - matched_count
     anomalies = detect_anomalies(checkins)
@@ -142,6 +154,7 @@ def session_report_page(request, pk: int):
             "anomaly_count": anomaly_count,
             "unique_only": unique_only,
             "total_checkin_count": len(all_checkins),
+            "face_options": face_options,
         },
     )
 
@@ -186,3 +199,43 @@ def checkin_image(request, pk: int):
     image_field = checkin.raw_face_image
     image_field.open("rb")
     return FileResponse(image_field, content_type="image/jpeg")
+
+
+@login_required
+@require_POST
+def checkin_remap(request, pk: int):
+    """POST /sessions/checkins/<pk>/remap/ — remap a check-in to a face in the session face group."""
+    checkin = get_object_or_404(CheckIn.objects.select_related("session__klass__face_group", "face"), pk=pk)
+    unique_only = request.POST.get("unique") == "1"
+    face_id = request.POST.get("face_id")
+
+    if not face_id:
+        messages.error(request, _("Please choose a participant."))
+        return redirect(_report_page_url(checkin.session_id, unique_only))
+
+    face = get_object_or_404(
+        Face,
+        pk=face_id,
+        face_group=checkin.session.klass.face_group,
+    )
+
+    checkin.face = face
+    checkin.matched = True
+    checkin.save(update_fields=["face", "matched"])
+
+    messages.success(request, _('Check-in remapped to "%(name)s".') % {"name": face.name})
+    return redirect(_report_page_url(checkin.session_id, unique_only))
+
+
+@login_required
+@require_POST
+def checkin_delete(request, pk: int):
+    """POST /sessions/checkins/<pk>/delete/ — delete a check-in from the report."""
+    checkin = get_object_or_404(CheckIn.objects.select_related("session"), pk=pk)
+    unique_only = request.POST.get("unique") == "1"
+    session_id = checkin.session_id
+    if checkin.raw_face_image:
+        checkin.raw_face_image.delete(save=False)
+    checkin.delete()
+    messages.success(request, _("Check-in deleted."))
+    return redirect(_report_page_url(session_id, unique_only))
