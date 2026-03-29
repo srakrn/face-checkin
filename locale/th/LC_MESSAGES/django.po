@@ -313,3 +313,23 @@ msgstr ""
 #: templates/sessions/session_list.html:28
 msgid "กำลังอัปเดต…"
 msgstr ""
+
+#: templates/404.html:4 templates/404.html:8
+msgid "Page Not Found"
+msgstr "ไม่พบหน้าที่ต้องการ"
+
+#: templates/404.html:9
+msgid "The page you're looking for doesn't exist."
+msgstr "หน้าที่คุณกำลังมองหาไม่มีอยู่"
+
+#: templates/404.html:10 templates/403.html:10
+msgid "Go Home"
+msgstr "กลับหน้าหลัก"
+
+#: templates/403.html:4 templates/403.html:8
+msgid "Permission Denied"
+msgstr "ไม่มีสิทธิ์เข้าถึง"
+
+#: templates/403.html:9
+msgid "You don't have permission to access this page."
+msgstr "คุณไม่มีสิทธิ์เข้าถึงหน้านี้"
