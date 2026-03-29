@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     curl \
     gosu \
+    gettext \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv
@@ -32,6 +33,9 @@ COPY . .
 COPY docker/entrypoint.sh /app/entrypoint.sh
 COPY docker/scheduler.sh /app/scheduler.sh
 RUN chmod +x /app/entrypoint.sh /app/scheduler.sh
+
+# Compile translation catalogs so container always serves current locale strings
+RUN python manage.py compilemessages
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
