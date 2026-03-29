@@ -135,6 +135,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Face matching configuration
 FACE_MATCH_THRESHOLD = env.float("FACE_MATCH_THRESHOLD", default=0.6)
 
+# Authentication UX
+LOGIN_URL = "/login/"
+LOGIN_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/"
+
 # Exception reporter — show full debug pages to authenticated superusers even
 # when DEBUG=False.  For all other users the standard safe filter applies.
 DEFAULT_EXCEPTION_REPORTER_FILTER = (

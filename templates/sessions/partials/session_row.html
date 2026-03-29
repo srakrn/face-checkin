@@ -30,14 +30,25 @@
           hx-indicator="#global-indicator"
           hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
         >
-          ■ {% trans "ปิดการเช็กอิน" %}
+          {% trans "ปิดการเช็กอิน" %}
+        </button>
+      {% else %}
+        <button
+          class="btn btn-success btn-sm"
+          hx-post="{% url 'sessions:open' session.pk %}"
+          hx-target="#session-row-{{ session.pk }}"
+          hx-swap="outerHTML"
+          hx-indicator="#global-indicator"
+          hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+        >
+          {% trans "เปิดการเช็กอิน" %}
         </button>
       {% endif %}
       <a href="{% url 'sessions:report_page' session.pk %}" class="btn btn-outline-secondary btn-sm">
-        📋 {% trans "รายงาน" %}
+        {% trans "รายงาน" %}
       </a>
       <a href="{% url 'admin:checkin_sessions_session_change' session.pk %}" class="btn btn-outline-secondary btn-sm">
-        ✏ {% trans "แก้ไข" %}
+        {% trans "แก้ไข" %}
       </a>
     </div>
   </td>

@@ -7,14 +7,12 @@ Covers:
 """
 
 import io
-import json
 
 import numpy as np
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.template.loader import render_to_string
-from django.utils import timezone
 from django.utils.translation import override
 
 from apps.checkin.models import CheckIn
@@ -80,6 +78,12 @@ def draft_session(klass):
 @pytest.fixture
 def active_session(klass):
     return Session.objects.create(klass=klass, name="Active Session")
+
+
+@pytest.fixture
+def closed_session(active_session):
+    active_session.close()
+    return active_session
 
 
 @pytest.fixture
@@ -230,6 +234,110 @@ class TestSessionReport:
     def test_post_method_not_allowed(self, client, active_session):
         response = client.post(f"/api/sessions/{active_session.pk}/report/")
         assert response.status_code == 405
+
+
+@pytest.mark.django_db
+class TestCustomLoginFlow:
+    def test_index_hides_active_sessions_when_logged_out(self, client, active_session):
+        response = client.get("/")
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert "เข้าสู่ระบบ" in content
+        assert active_session.name not in content
+        assert "เข้าสู่ระบบเพื่อดูรายการคาบเรียนที่เปิดให้เช็กอิน" in content
+
+    def test_index_shows_active_sessions_when_logged_in(self, client, staff_user, active_session):
+        client.force_login(staff_user)
+
+        response = client.get("/")
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert active_session.name in content
+        assert "Admin" in content
+        assert "ออกจากระบบ" in content
+
+    def test_login_page_renders(self, client):
+        response = client.get("/login/")
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert "ใช้บัญชีเดียวกับ Django Admin" in content
+        assert 'name="username"' in content
+        assert 'name="password"' in content
+
+
+@pytest.mark.django_db
+class TestSessionStateMutationViews:
+    def test_class_session_list_renders_open_button_for_closed_session(
+        self, client, staff_user, klass, closed_session
+    ):
+        client.force_login(staff_user)
+
+        response = client.get(f"/sessions/classes/{klass.pk}/")
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert "เปิดการเช็กอิน" in content
+
+    def test_open_closed_session_returns_updated_row(self, client, staff_user, closed_session):
+        client.force_login(staff_user)
+
+        response = client.post(f"/sessions/{closed_session.pk}/open/")
+
+        closed_session.refresh_from_db()
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert closed_session.state == Session.State.ACTIVE
+        assert "ปิดการเช็กอิน" in content
+
+    def test_close_active_session_returns_updated_row(self, client, staff_user, active_session):
+        client.force_login(staff_user)
+
+        response = client.post(f"/sessions/{active_session.pk}/close/")
+
+        active_session.refresh_from_db()
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert active_session.state == Session.State.CLOSED
+        assert "เปิดการเช็กอิน" in content
+
+    def test_login_redirects_to_next_url_when_credentials_are_valid(self, client, staff_user):
+        response = client.post(
+            "/login/?next=/sessions/",
+            {"username": "staff", "password": "password123"},
+        )
+
+        assert response.status_code == 302
+        assert response["Location"] == "/sessions/"
+
+    def test_login_shows_error_for_invalid_credentials(self, client):
+        response = client.post(
+            "/login/",
+            {"username": "wrong", "password": "bad-password"},
+        )
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" in content
+
+    def test_logout_clears_authenticated_session(self, client, staff_user):
+        client.force_login(staff_user)
+
+        response = client.post("/logout/", follow=True)
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert "_auth_user_id" not in client.session
+        assert "ออกจากระบบแล้ว" in content
+        assert "เข้าสู่ระบบ" in content
+
+    def test_session_pages_redirect_to_custom_login(self, client):
+        response = client.get("/sessions/")
+
+        assert response.status_code == 302
+        assert response["Location"] == "/login/?next=/sessions/"
 
 
 @pytest.mark.django_db
