@@ -363,6 +363,11 @@
                   {% endif %}
                 </td>
                 <td>
+                  {% if checkin.anomaly_reasons %}
+                    <span class="badge text-bg-warning"
+                          title="{{ checkin.anomaly_reasons|join:', ' }}">⚠ {% trans "Suspicious" %}</span>
+                  {% endif %}
+
                   {% if checkin.matched %}
                     <span class="badge text-bg-success">✓ {% trans "Matched" %}</span>
                   {% else %}
@@ -373,11 +378,6 @@
                 <td><code class="text-muted small">{{ checkin.ip_address|default:"—" }}</code></td>
                 <td class="report-screen-only">
                   <div class="d-flex flex-column gap-2" style="min-width: 15rem;">
-                    {% if checkin.anomaly_reasons %}
-                      <span class="badge text-bg-warning text-dark align-self-start"
-                            title="{{ checkin.anomaly_reasons|join:', ' }}">⚠ {% trans "Suspicious" %}</span>
-                    {% endif %}
-
                     <div class="d-flex gap-2">
                       <button
                         type="button"
