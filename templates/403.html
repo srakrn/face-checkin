@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}403 - {% trans "Permission Denied" %}{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center min-vh-100">
+  <div class="text-center">
+    <h1 class="display-1 fw-bold text-muted">403</h1>
+    <p class="fs-4 text-muted">{% trans "You don't have permission to access this page." %}</p>
+    <a href="/" class="btn btn-primary mt-3">{% trans "Go Home" %}</a>
+  </div>
+</div>
+{% endblock %}

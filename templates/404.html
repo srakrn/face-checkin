@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}404 - {% trans "Page Not Found" %}{% endblock %}
+
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center min-vh-100">
+  <div class="text-center">
+    <h1 class="display-1 fw-bold text-muted">404</h1>
+    <p class="fs-4 text-muted">{% trans "The page you're looking for doesn't exist." %}</p>
+    <a href="/" class="btn btn-primary mt-3">{% trans "Go Home" %}</a>
+  </div>
+</div>
+{% endblock %}
