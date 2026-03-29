@@ -48,7 +48,7 @@
           if (data.state === 'active') { location.reload(); }
         })
         .catch(function () { /* ignore network errors */ });
-    }, 60000);
+    }, 30000);
   })();
 </script>
 
@@ -377,7 +377,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         } catch (_) {
           // Ignore network errors — will retry next interval
         }
-      }, 60000);
+      }, 30000);
     },
 
     _stopSessionPoll() {
