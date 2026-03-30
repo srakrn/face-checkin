@@ -6,11 +6,13 @@ Session state is passed to the template so the kiosk can display
 appropriate error panels for closed / not-found sessions.
 """
 
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
 from apps.sessions.models import Session
 
 
+@login_required
 def kiosk(request, session_id: int):
     """
     Render the kiosk check-in page for a session.

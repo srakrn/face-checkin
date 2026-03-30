@@ -14,6 +14,7 @@ import json
 
 import numpy as np
 import pytest
+from django.contrib.auth import get_user_model
 from django.test import Client
 from django.urls import reverse
 
@@ -53,8 +54,23 @@ def _fake_image(name: str = "face.jpg") -> io.BytesIO:
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
-def client():
+def anon_client():
     return Client()
+
+
+@pytest.fixture
+def staff_user(db):
+    return get_user_model().objects.create_user(
+        username="staff",
+        password="password123",
+        is_staff=True,
+    )
+
+
+@pytest.fixture
+def client(anon_client, staff_user):
+    anon_client.force_login(staff_user)
+    return anon_client
 
 
 @pytest.fixture
@@ -322,3 +338,49 @@ class TestMissingFields:
         )
         assert response.status_code == 400
         assert "face_image" in response.json().get("error", "")
+
+
+# ---------------------------------------------------------------------------
+# GET /kiosk/<session_id>/
+# ---------------------------------------------------------------------------
+
+@pytest.mark.django_db
+class TestKioskPageAuth:
+    def test_anonymous_user_is_redirected_to_login(self, anon_client, active_session):
+        response = anon_client.get(reverse("kiosk:kiosk", args=[active_session.pk]))
+
+        assert response.status_code == 302
+        assert response["Location"] == f"/login/?next=/kiosk/{active_session.pk}/"
+
+    def test_authenticated_user_can_access_kiosk_page(self, client, active_session):
+        response = client.get(reverse("kiosk:kiosk", args=[active_session.pk]))
+
+        assert response.status_code == 200
+        assert response.context["session"] == active_session
+        assert response.context["session_state"] == "active"
+
+
+@pytest.mark.django_db
+class TestCheckinApiAuth:
+    def test_anonymous_user_is_redirected_from_match_api(self, anon_client, active_session):
+        response = anon_client.post(
+            CHECKIN_MATCH_URL,
+            data={
+                "session_id": active_session.pk,
+                "embedding": json.dumps(_unit_vec(128, 0)),
+                "face_image": _fake_image(),
+            },
+        )
+
+        assert response.status_code == 302
+        assert response["Location"] == f"/login/?next={CHECKIN_MATCH_URL}"
+
+    def test_anonymous_user_is_redirected_from_embeddings_api(
+        self, anon_client, active_session
+    ):
+        response = anon_client.get(
+            reverse("checkin_api:embeddings", args=[active_session.pk])
+        )
+
+        assert response.status_code == 302
+        assert response["Location"] == f"/login/?next=/api/sessions/{active_session.pk}/embeddings/"

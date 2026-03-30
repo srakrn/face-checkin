@@ -29,6 +29,7 @@ from .models import Session
 
 
 @require_GET
+@login_required
 def session_detail(request, pk: int):
     """GET /api/sessions/<pk>/ — return session state and metadata."""
     session = get_object_or_404(Session, pk=pk)
@@ -45,6 +46,7 @@ def session_detail(request, pk: int):
 
 
 @require_GET
+@login_required
 def session_report(request, pk: int):
     """GET /api/sessions/<pk>/report/ — return check-in report as JSON."""
     session = get_object_or_404(Session, pk=pk)

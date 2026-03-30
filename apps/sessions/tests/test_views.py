@@ -52,6 +52,12 @@ def client():
 
 
 @pytest.fixture
+def auth_client(client, staff_user):
+    client.force_login(staff_user)
+    return client
+
+
+@pytest.fixture
 def staff_user(db):
     return get_user_model().objects.create_user(
         username="staff",
@@ -136,46 +142,46 @@ def checkin_unmatched(active_session):
 
 @pytest.mark.django_db
 class TestSessionDetail:
-    def test_returns_200_for_existing_session(self, client, draft_session):
-        response = client.get(f"/api/sessions/{draft_session.pk}/")
+    def test_returns_200_for_existing_session(self, auth_client, draft_session):
+        response = auth_client.get(f"/api/sessions/{draft_session.pk}/")
         assert response.status_code == 200
 
-    def test_returns_correct_id(self, client, draft_session):
-        response = client.get(f"/api/sessions/{draft_session.pk}/")
+    def test_returns_correct_id(self, auth_client, draft_session):
+        response = auth_client.get(f"/api/sessions/{draft_session.pk}/")
         data = response.json()
         assert data["id"] == draft_session.pk
 
-    def test_returns_correct_name(self, client, draft_session):
-        response = client.get(f"/api/sessions/{draft_session.pk}/")
+    def test_returns_correct_name(self, auth_client, draft_session):
+        response = auth_client.get(f"/api/sessions/{draft_session.pk}/")
         data = response.json()
         assert data["name"] == "Draft Session"
 
-    def test_returns_correct_state_active(self, client, active_session):
-        response = client.get(f"/api/sessions/{active_session.pk}/")
+    def test_returns_correct_state_active(self, auth_client, active_session):
+        response = auth_client.get(f"/api/sessions/{active_session.pk}/")
         data = response.json()
         assert data["state"] == "active"
 
-    def test_returns_correct_class_id(self, client, draft_session, klass):
-        response = client.get(f"/api/sessions/{draft_session.pk}/")
+    def test_returns_correct_class_id(self, auth_client, draft_session, klass):
+        response = auth_client.get(f"/api/sessions/{draft_session.pk}/")
         data = response.json()
         assert data["class_id"] == klass.pk
 
-    def test_scheduled_at_none_when_not_set(self, client, draft_session):
-        response = client.get(f"/api/sessions/{draft_session.pk}/")
+    def test_scheduled_at_none_when_not_set(self, auth_client, draft_session):
+        response = auth_client.get(f"/api/sessions/{draft_session.pk}/")
         data = response.json()
         assert data["scheduled_at"] is None
 
-    def test_auto_close_at_none_when_not_set(self, client, draft_session):
-        response = client.get(f"/api/sessions/{draft_session.pk}/")
+    def test_auto_close_at_none_when_not_set(self, auth_client, draft_session):
+        response = auth_client.get(f"/api/sessions/{draft_session.pk}/")
         data = response.json()
         assert data["auto_close_at"] is None
 
-    def test_returns_404_for_nonexistent_session(self, client, db):
-        response = client.get("/api/sessions/999999/")
+    def test_returns_404_for_nonexistent_session(self, auth_client, db):
+        response = auth_client.get("/api/sessions/999999/")
         assert response.status_code == 404
 
-    def test_post_method_not_allowed(self, client, draft_session):
-        response = client.post(f"/api/sessions/{draft_session.pk}/")
+    def test_post_method_not_allowed(self, auth_client, draft_session):
+        response = auth_client.post(f"/api/sessions/{draft_session.pk}/")
         assert response.status_code == 405
 
 
@@ -185,31 +191,31 @@ class TestSessionDetail:
 
 @pytest.mark.django_db
 class TestSessionReport:
-    def test_returns_200_for_existing_session(self, client, active_session):
-        response = client.get(f"/api/sessions/{active_session.pk}/report/")
+    def test_returns_200_for_existing_session(self, auth_client, active_session):
+        response = auth_client.get(f"/api/sessions/{active_session.pk}/report/")
         assert response.status_code == 200
 
-    def test_returns_correct_session_id(self, client, active_session):
-        response = client.get(f"/api/sessions/{active_session.pk}/report/")
+    def test_returns_correct_session_id(self, auth_client, active_session):
+        response = auth_client.get(f"/api/sessions/{active_session.pk}/report/")
         data = response.json()
         assert data["session_id"] == active_session.pk
 
-    def test_empty_checkins_list_when_no_checkins(self, client, active_session):
-        response = client.get(f"/api/sessions/{active_session.pk}/report/")
+    def test_empty_checkins_list_when_no_checkins(self, auth_client, active_session):
+        response = auth_client.get(f"/api/sessions/{active_session.pk}/report/")
         data = response.json()
         assert data["checkins"] == []
 
     def test_lists_all_checkins(
-        self, client, active_session, checkin_matched, checkin_unmatched
+        self, auth_client, active_session, checkin_matched, checkin_unmatched
     ):
-        response = client.get(f"/api/sessions/{active_session.pk}/report/")
+        response = auth_client.get(f"/api/sessions/{active_session.pk}/report/")
         data = response.json()
         assert len(data["checkins"]) == 2
 
     def test_matched_checkin_has_correct_fields(
-        self, client, active_session, checkin_matched, enrolled_face
+        self, auth_client, active_session, checkin_matched, enrolled_face
     ):
-        response = client.get(f"/api/sessions/{active_session.pk}/report/")
+        response = auth_client.get(f"/api/sessions/{active_session.pk}/report/")
         data = response.json()
         matched = next(c for c in data["checkins"] if c["matched"])
         assert matched["face_id"] == enrolled_face.pk
@@ -218,22 +224,37 @@ class TestSessionReport:
         assert "checked_in_at" in matched
 
     def test_unmatched_checkin_has_null_face_fields(
-        self, client, active_session, checkin_unmatched
+        self, auth_client, active_session, checkin_unmatched
     ):
-        response = client.get(f"/api/sessions/{active_session.pk}/report/")
+        response = auth_client.get(f"/api/sessions/{active_session.pk}/report/")
         data = response.json()
         unmatched = next(c for c in data["checkins"] if not c["matched"])
         assert unmatched["face_id"] is None
         assert unmatched["face_name"] is None
         assert unmatched["face_custom_id"] is None
 
-    def test_returns_404_for_nonexistent_session(self, client, db):
-        response = client.get("/api/sessions/999999/report/")
+    def test_returns_404_for_nonexistent_session(self, auth_client, db):
+        response = auth_client.get("/api/sessions/999999/report/")
         assert response.status_code == 404
 
-    def test_post_method_not_allowed(self, client, active_session):
-        response = client.post(f"/api/sessions/{active_session.pk}/report/")
+    def test_post_method_not_allowed(self, auth_client, active_session):
+        response = auth_client.post(f"/api/sessions/{active_session.pk}/report/")
         assert response.status_code == 405
+
+
+@pytest.mark.django_db
+class TestSessionApiAuth:
+    def test_detail_redirects_anonymous_user_to_login(self, client, active_session):
+        response = client.get(f"/api/sessions/{active_session.pk}/")
+
+        assert response.status_code == 302
+        assert response["Location"] == f"/login/?next=/api/sessions/{active_session.pk}/"
+
+    def test_report_redirects_anonymous_user_to_login(self, client, active_session):
+        response = client.get(f"/api/sessions/{active_session.pk}/report/")
+
+        assert response.status_code == 302
+        assert response["Location"] == f"/login/?next=/api/sessions/{active_session.pk}/report/"
 
 
 @pytest.mark.django_db
@@ -263,7 +284,7 @@ class TestCustomLoginFlow:
 
         content = response.content.decode()
         assert response.status_code == 200
-        assert "ใช้บัญชีเดียวกับ Django Admin" in content
+        assert "เข้าสู่ระบบเพื่อเข้าถึงหน้าจัดการและรายการคาบเรียนที่เปิดอยู่" in content
         assert 'name="username"' in content
         assert 'name="password"' in content
 

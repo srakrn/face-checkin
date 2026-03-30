@@ -13,6 +13,7 @@ GET /api/sessions/<pk>/embeddings/
 
 import json
 
+from django.contrib.auth.decorators import login_required
 from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -26,6 +27,7 @@ from .matching import find_best_match, find_top_matches
 from .models import CheckIn
 
 
+@login_required
 @csrf_exempt
 @require_POST
 def checkin_match(request):
@@ -129,6 +131,7 @@ def checkin_match(request):
         )
 
 
+@login_required
 @require_GET
 def session_embeddings(request, pk: int):
     """
