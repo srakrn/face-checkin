@@ -266,7 +266,8 @@ class TestCustomLoginFlow:
         assert response.status_code == 200
         assert "เข้าสู่ระบบ" in content
         assert active_session.name not in content
-        assert "เข้าสู่ระบบเพื่อดูรายการคาบเรียนที่เปิดให้เช็กอิน" in content
+        assert "schimudtcheck-logo.svg" in content
+        assert "<nav" not in content
 
     def test_index_shows_active_sessions_when_logged_in(self, client, staff_user, active_session):
         client.force_login(staff_user)

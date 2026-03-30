@@ -32,16 +32,16 @@ def _get_safe_redirect_target(request, default: str = "/") -> str:
 
 
 def index(request):
+    if not request.user.is_authenticated:
+        return render(request, "landing.html")
+
     from apps.sessions.models import Session
 
-    if request.user.is_authenticated:
-        active_sessions = (
-            Session.objects.filter(state="active")
-            .select_related("klass")
-            .order_by("-scheduled_at")
-        )
-    else:
-        active_sessions = Session.objects.none()
+    active_sessions = (
+        Session.objects.filter(state="active")
+        .select_related("klass")
+        .order_by("-scheduled_at")
+    )
 
     return render(request, "index.html", {"active_sessions": active_sessions})
 

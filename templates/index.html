@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static i18n %}
+{% load i18n %}
 
 {% block title %}SchimudtCHECK{% endblock %}
 
@@ -102,42 +102,36 @@
 {% block main_class %}container py-4{% endblock %}
 
 {% block content %}
-    <section>
-      <div class="session-panel-header">
-        <div>
-          <h2 class="h4 mb-1">{% trans "คาบเรียนที่เปิดให้เช็กอิน" %}</h2>
-        </div>
+  <section>
+    <div class="session-panel-header">
+      <div>
+        <h2 class="h4 mb-1">{% trans "คาบเรียนที่เปิดให้เช็กอิน" %}</h2>
       </div>
+    </div>
 
-      {% if request.user.is_authenticated %}
-        {% if active_sessions %}
-          <div class="session-list">
-            {% for session in active_sessions %}
-              <article class="session-card">
-                <div class="session-info">
-                  <span class="session-name">{{ session.name }}</span>
-                  <span class="session-meta">
-                    {% if session.scheduled_at %}{{ session.scheduled_at }}{% endif %}
-                    {% if session.klass %}{{ session.klass }}{% endif %}
-                  </span>
-                </div>
-                <div class="session-actions">
-                  <a class="btn btn-primary" href="/kiosk/{{ session.pk }}/" target="_blank" rel="noopener">
-                    {% trans "เปิดหน้าจอเช็กอิน ↗" %}
-                  </a>
-                </div>
-              </article>
-            {% endfor %}
-          </div>
-        {% else %}
-          <div class="session-card empty-state">
-            <p class="mb-0">{% trans "ยังไม่มีคาบเรียนที่เปิดให้เช็กอิน" %}</p>
-          </div>
-        {% endif %}
-      {% else %}
-        <div class="session-card empty-state">
-          <p class="mb-0">{% trans "เข้าสู่ระบบเพื่อดูรายการคาบเรียนที่เปิดให้เช็กอิน" %}</p>
-        </div>
-      {% endif %}
-    </section>
+    {% if active_sessions %}
+      <div class="session-list">
+        {% for session in active_sessions %}
+          <article class="session-card">
+            <div class="session-info">
+              <span class="session-name">{{ session.name }}</span>
+              <span class="session-meta">
+                {% if session.scheduled_at %}{{ session.scheduled_at }}{% endif %}
+                {% if session.klass %}{{ session.klass }}{% endif %}
+              </span>
+            </div>
+            <div class="session-actions">
+              <a class="btn btn-primary" href="/kiosk/{{ session.pk }}/" target="_blank" rel="noopener">
+                {% trans "เปิดหน้าจอเช็กอิน ↗" %}
+              </a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="session-card empty-state">
+        <p class="mb-0">{% trans "ยังไม่มีคาบเรียนที่เปิดให้เช็กอิน" %}</p>
+      </div>
+    {% endif %}
+  </section>
 {% endblock %}
