@@ -178,3 +178,4 @@ The Docker deployment includes a `scheduler` service that automatically runs `au
 6. **Static face-api.js assets**: `face-api.min.js` and model weight files are committed under `static/js/face-api/`. No additional download required.
 7. **Migrations**: After changing models, run `python manage.py makemigrations` and commit the migration files.
 8. **Tests**: Place tests in `tests/` at the app level or in a top-level `tests/` directory. Use `pytest-django`.
+9. **Template styling**: Prefer plain Bootstrap markup and utilities over custom CSS. Keep pages visually simple, boring, and efficient; avoid decorative styling like custom shadows, fancy spacing systems, or bespoke component classes unless required for functionality (for example kiosk camera UI or print-specific report rules).
