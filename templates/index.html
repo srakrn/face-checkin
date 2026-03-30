@@ -3,134 +3,42 @@
 
 {% block title %}SchimudtCHECK{% endblock %}
 
-{% block extra_head %}
-  <style>
-    .landing-shell {
-      padding: 0.5rem 0 1rem;
-    }
-
-    .session-card {
-      background: #fff;
-      border: 1px solid #dee2e6;
-      border-radius: 18px;
-      box-shadow: 0 12px 30px rgba(33, 37, 41, 0.06);
-    }
-
-    .session-panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .session-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .session-card {
-      padding: 1.25rem 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-
-    .session-info {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-
-    .session-name {
-      font-weight: 600;
-      font-size: 1rem;
-      color: #212529;
-    }
-
-    .session-meta {
-      font-size: 0.9rem;
-      color: #6c757d;
-    }
-
-    .session-actions {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .empty-state {
-      padding: 1.5rem;
-      text-align: center;
-      color: #6c757d;
-    }
-
-    @media (max-width: 900px) {
-      .landing-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .landing-card {
-        position: static;
-      }
-    }
-
-    @media (max-width: 576px) {
-      .landing-shell {
-        padding-top: 1.25rem;
-      }
-
-      .landing-card,
-      .session-card {
-        border-radius: 14px;
-      }
-
-      .session-card {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .session-actions .btn {
-        width: 100%;
-      }
-    }
-  </style>
-{% endblock %}
-
 {% block main_class %}container py-4{% endblock %}
 
 {% block content %}
   <section>
-    <div class="session-panel-header">
+    <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
       <div>
         <h2 class="h4 mb-1">{% trans "คาบเรียนที่เปิดให้เช็กอิน" %}</h2>
       </div>
     </div>
 
     {% if active_sessions %}
-      <div class="session-list">
+      <div class="d-grid gap-3">
         {% for session in active_sessions %}
-          <article class="session-card">
-            <div class="session-info">
-              <span class="session-name">{{ session.name }}</span>
-              <span class="session-meta">
+          <article class="card">
+            <div class="card-body d-flex flex-column flex-sm-row align-items-sm-center justify-content-sm-between gap-3">
+              <div class="d-flex flex-column gap-1">
+                <span class="fw-semibold">{{ session.name }}</span>
+                <span class="small text-muted">
                 {% if session.scheduled_at %}{{ session.scheduled_at }}{% endif %}
                 {% if session.klass %}{{ session.klass }}{% endif %}
-              </span>
-            </div>
-            <div class="session-actions">
-              <a class="btn btn-primary" href="/kiosk/{{ session.pk }}/" target="_blank" rel="noopener">
-                {% trans "เปิดหน้าจอเช็กอิน ↗" %}
-              </a>
+                </span>
+              </div>
+              <div class="d-grid d-sm-block">
+                <a class="btn btn-primary" href="/kiosk/{{ session.pk }}/" target="_blank" rel="noopener">
+                  {% trans "เปิดหน้าจอเช็กอิน ↗" %}
+                </a>
+              </div>
             </div>
           </article>
         {% endfor %}
       </div>
     {% else %}
-      <div class="session-card empty-state">
-        <p class="mb-0">{% trans "ยังไม่มีคาบเรียนที่เปิดให้เช็กอิน" %}</p>
+      <div class="card">
+        <div class="card-body text-center text-muted py-4">
+          <p class="mb-0">{% trans "ยังไม่มีคาบเรียนที่เปิดให้เช็กอิน" %}</p>
+        </div>
       </div>
     {% endif %}
   </section>

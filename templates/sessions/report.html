@@ -11,29 +11,8 @@
       margin: 12mm;
     }
 
-    .report-meta-grid {
-      display: grid;
-      grid-template-columns: max-content 1fr;
-      gap: 0.25rem 1rem;
-    }
-
-    .report-avatar {
-      width: 64px;
-      height: 64px;
-      object-fit: cover;
-      border-radius: 6px;
-    }
-
     .report-print-only {
       display: none;
-    }
-
-    .report-print-hide {
-      display: block;
-    }
-
-    .report-page-title {
-      margin-bottom: 0.25rem;
     }
 
     @media print {
@@ -60,11 +39,6 @@
         z-index: 1;
       }
 
-      .report-print-logo {
-        width: 150px;
-        height: auto;
-      }
-
       .report-print-hide {
         display: none !important;
       }
@@ -86,7 +60,6 @@
       .report-generated-at {
         margin-top: 1rem;
         padding-top: 0.5rem;
-        border-top: 1px solid #adb5bd;
         text-align: right;
         font-size: 11px;
         color: #495057;
@@ -130,7 +103,6 @@
       }
 
       .report-table-card tbody tr,
-      .report-avatar,
       img {
         break-inside: avoid;
         page-break-inside: avoid;
@@ -212,7 +184,7 @@
   <div class="report-print-only report-print-header">
     <img src="{% static 'img/schimudtcheck-logo.svg' %}"
          alt="SchimudtCHECK"
-         class="report-print-logo">
+         width="150">
   </div>
 
   <nav aria-label="breadcrumb" class="mb-3 report-screen-only">
@@ -225,8 +197,8 @@
 
   <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2 report-page-header">
     <div>
-      <h1 class="h3 report-page-title">{{ session.name }}</h1>
-      <div class="text-muted small report-page-subtitle">{% trans "Class" %}: {{ session.klass.name }}</div>
+      <h1 class="h3 mb-1">{{ session.name }}</h1>
+      <div class="text-muted small">{% trans "Class" %}: {{ session.klass.name }}</div>
     </div>
     <div class="d-flex gap-2 flex-wrap report-screen-only">
       <button type="button" class="btn btn-dark btn-sm" onclick="window.print()">
@@ -251,11 +223,11 @@
   </div>
 
   {# ---- Meta info ---- #}
-  <div class="card shadow-sm mb-4 report-meta-card">
+  <div class="card mb-4">
     <div class="card-body">
-      <dl class="mb-3 report-meta-grid">
-        <dt class="text-muted small fw-normal report-print-hide">{% trans "Status" %}</dt>
-        <dd class="mb-0 report-print-hide">
+      <dl class="row g-2 mb-3">
+        <dt class="col-sm-3 col-lg-2 text-muted small fw-normal report-print-hide mb-0">{% trans "Status" %}</dt>
+        <dd class="col-sm-9 col-lg-10 mb-0 report-print-hide">
           {% if session.state == "active" %}
             <span class="badge text-bg-success">{% trans "Open for Check-in" %}</span>
           {% else %}
@@ -263,12 +235,12 @@
           {% endif %}
         </dd>
         {% if session.scheduled_at %}
-          <dt class="text-muted small fw-normal">{% trans "Start Time" %}</dt>
-          <dd class="mb-0 small">{{ session.scheduled_at }}</dd>
+          <dt class="col-sm-3 col-lg-2 text-muted small fw-normal mb-0">{% trans "Start Time" %}</dt>
+          <dd class="col-sm-9 col-lg-10 mb-0 small">{{ session.scheduled_at }}</dd>
         {% endif %}
         {% if session.auto_close_at %}
-          <dt class="text-muted small fw-normal">{% trans "Close Time" %}</dt>
-          <dd class="mb-0 small">{{ session.auto_close_at }}</dd>
+          <dt class="col-sm-3 col-lg-2 text-muted small fw-normal mb-0">{% trans "Close Time" %}</dt>
+          <dd class="col-sm-9 col-lg-10 mb-0 small">{{ session.auto_close_at }}</dd>
         {% endif %}
       </dl>
 
@@ -311,7 +283,7 @@
   </div>
 
   {# ---- Check-in table ---- #}
-  <div class="card shadow-sm report-table-card">
+  <div class="card report-table-card">
     <div class="card-header d-flex justify-content-between align-items-center">
       <h2 class="h5 mb-0">
         {% trans "Check-in History" %}
@@ -343,7 +315,9 @@
                   {% if checkin.raw_face_image %}
                     <img src="{% url 'sessions:checkin_image' checkin.pk %}"
                          alt="{% blocktrans with pk=checkin.pk %}Face image for check-in #{{ pk }}{% endblocktrans %}"
-                         class="report-avatar">
+                         class="img-thumbnail"
+                         width="64"
+                         height="64">
                   {% else %}
                     <span class="text-muted">—</span>
                   {% endif %}
@@ -377,7 +351,7 @@
                 <td>{{ checkin.checked_in_at }}</td>
                 <td><code class="text-muted small">{{ checkin.ip_address|default:"—" }}</code></td>
                 <td class="report-screen-only">
-                  <div class="d-flex flex-column gap-2" style="min-width: 15rem;">
+                  <div class="d-flex flex-column gap-2">
                     <div class="d-flex gap-2">
                       <button
                         type="button"

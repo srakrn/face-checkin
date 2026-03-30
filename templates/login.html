@@ -3,47 +3,34 @@
 
 {% block title %}{% trans "เข้าสู่ระบบ" %} - SchimudtCHECK{% endblock %}
 
-{% block extra_head %}
-  <style>
-    .login-shell {
-      max-width: 440px;
-      margin: 0 auto;
-      padding: 2rem 0;
-    }
-
-    .login-card {
-      background: #fff;
-      border: 1px solid #dee2e6;
-      border-radius: 18px;
-      box-shadow: 0 12px 30px rgba(33, 37, 41, 0.08);
-    }
-  </style>
-{% endblock %}
-
 {% block main_class %}container py-4{% endblock %}
 
 {% block content %}
-  <section class="login-shell">
-    <div class="login-card p-4 p-md-5">
-      <h1 class="h3 mb-2">{% trans "เข้าสู่ระบบ" %}</h1>
-      <p class="text-muted mb-4">{% trans "เข้าสู่ระบบเพื่อเข้าถึงหน้าจัดการและรายการคาบเรียนที่เปิดอยู่" %}</p>
+  <section class="row justify-content-center py-4">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
+      <div class="card">
+        <div class="card-body p-4 p-md-5">
+          <h1 class="h3 mb-2">{% trans "เข้าสู่ระบบ" %}</h1>
+          <p class="text-muted mb-4">{% trans "เข้าสู่ระบบเพื่อเข้าถึงหน้าจัดการและรายการคาบเรียนที่เปิดอยู่" %}</p>
 
-      <form method="post" class="d-grid gap-3">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ next_url }}">
+          <form method="post" class="d-grid gap-3">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next_url }}">
 
-        <div>
-          <label class="form-label" for="id_username">{% trans "ชื่อผู้ใช้" %}</label>
-          <input class="form-control" id="id_username" name="username" type="text" autocomplete="username" required />
+            <div>
+              <label class="form-label" for="id_username">{% trans "ชื่อผู้ใช้" %}</label>
+              <input class="form-control" id="id_username" name="username" type="text" autocomplete="username" required />
+            </div>
+
+            <div>
+              <label class="form-label" for="id_password">{% trans "รหัสผ่าน" %}</label>
+              <input class="form-control" id="id_password" name="password" type="password" autocomplete="current-password" required />
+            </div>
+
+            <button class="btn btn-dark" type="submit">{% trans "เข้าสู่ระบบ" %}</button>
+          </form>
         </div>
-
-        <div>
-          <label class="form-label" for="id_password">{% trans "รหัสผ่าน" %}</label>
-          <input class="form-control" id="id_password" name="password" type="password" autocomplete="current-password" required />
-        </div>
-
-        <button class="btn btn-dark" type="submit">{% trans "เข้าสู่ระบบ" %}</button>
-      </form>
+      </div>
     </div>
   </section>
 {% endblock %}

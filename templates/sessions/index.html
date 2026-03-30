@@ -13,7 +13,7 @@
       {% for klass in all_classes %}
         <div class="col">
           <a href="{% url 'sessions:class_session_list' klass.pk %}" class="text-decoration-none">
-            <div class="card h-100 shadow-sm">
+            <div class="card h-100">
               <div class="card-body">
                 <h5 class="card-title">{{ klass.name }}</h5>
                 <p class="card-text text-muted small">

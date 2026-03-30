@@ -10,48 +10,14 @@
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@2.x.x/dist/htmx.min.js"></script>
-  <style>
-    .navbar-brand.site-brand {
-      display: inline-flex;
-      align-items: center;
-      padding-top: 0;
-      padding-bottom: 0;
-    }
-
-    .navbar-brand.site-brand img {
-      display: block;
-      height: 36px;
-      width: auto;
-    }
-
-    .site-navbar {
-      background: #ffffff;
-      border-bottom: 1px solid #dee2e6;
-    }
-
-    .site-navbar form {
-      margin: 0;
-    }
-
-    .site-navbar .nav-link-button {
-      background: none;
-      border: 0;
-      width: 100%;
-      text-align: left;
-    }
-
-    .flash-messages {
-      width: 100%;
-    }
-  </style>
   {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}bg-light{% endblock %}">
   {% block navbar %}
-    <nav class="navbar navbar-expand-sm navbar-light sticky-top site-navbar">
+    <nav class="navbar navbar-expand-sm navbar-light sticky-top bg-white border-bottom">
       <div class="container">
-        <a class="navbar-brand site-brand" href="{% url 'index' %}" aria-label="SchimudtCHECK">
-          <img src="{% static 'img/schimudtcheck-v-logo.svg' %}" alt="SchimudtCHECK" />
+        <a class="navbar-brand d-inline-flex align-items-center py-0" href="{% url 'index' %}" aria-label="SchimudtCHECK">
+          <img src="{% static 'img/schimudtcheck-v-logo.svg' %}" alt="SchimudtCHECK" height="36" />
         </a>
         <button
           class="navbar-toggler"
@@ -74,9 +40,11 @@
                 <a href="{% url 'admin:index' %}" class="nav-link">Admin</a>
               </li>
               <li class="nav-item">
-                <form method="post" action="{% url 'logout' %}">
+                <form method="post" action="{% url 'logout' %}" class="m-0">
                   {% csrf_token %}
-                  <button type="submit" class="nav-link nav-link-button">{% trans "ออกจากระบบ" %}</button>
+                  <button type="submit" class="nav-link btn btn-link border-0 w-100 text-start text-decoration-none">
+                    {% trans "ออกจากระบบ" %}
+                  </button>
                 </form>
               </li>
             {% else %}
@@ -92,7 +60,7 @@
 
   <main class="{% block main_class %}container py-4{% endblock %}">
     {% if messages %}
-      <div class="flash-messages mb-4">
+      <div class="w-100 mb-4">
         {% for message in messages %}
           <div class="alert alert-{{ message.tags|default:'info' }} mb-2" role="alert">
             {{ message }}

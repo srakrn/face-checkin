@@ -3,63 +3,27 @@
 
 {% block title %}SchimudtCHECK{% endblock %}
 
-{% block extra_head %}
-  <style>
-    .guest-landing {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem 1.5rem;
-    }
-
-    .guest-landing-inner {
-      width: min(100%, 520px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 2.5rem;
-      text-align: center;
-    }
-
-    .guest-logo {
-      width: min(100%, 420px);
-      height: auto;
-      display: block;
-    }
-
-    @media (max-width: 576px) {
-      .guest-landing {
-        padding: 1.5rem 1rem;
-      }
-
-      .guest-landing-inner {
-        gap: 2rem;
-      }
-
-      .guest-logo {
-        width: min(100%, 320px);
-      }
-    }
-  </style>
-{% endblock %}
-
 {% block navbar %}{% endblock %}
 
 {% block body_class %}bg-white{% endblock %}
 
-{% block main_class %}guest-landing{% endblock %}
+{% block main_class %}container min-vh-100 d-flex align-items-center justify-content-center py-4 py-sm-5{% endblock %}
 
 {% block content %}
-  <div class="guest-landing-inner">
-    <img
-      class="guest-logo"
-      src="{% static 'img/schimudtcheck-logo.svg' %}"
-      alt="SchimudtCHECK"
-    />
-    <a class="btn btn-dark btn-lg px-5" href="{% url 'login' %}">
-      {% trans "เข้าสู่ระบบ" %}
-    </a>
+  <div class="row justify-content-center w-100">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 text-center">
+      <div class="d-grid gap-4 justify-content-center">
+        <img
+          class="img-fluid mx-auto"
+          src="{% static 'img/schimudtcheck-logo.svg' %}"
+          alt="SchimudtCHECK"
+        />
+        <div>
+          <a class="btn btn-dark btn-lg px-5" href="{% url 'login' %}">
+            {% trans "เข้าสู่ระบบ" %}
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 {% endblock %}
