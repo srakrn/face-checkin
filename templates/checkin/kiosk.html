@@ -145,7 +145,6 @@
         @click="takePhoto"
         :disabled="processing"
       >
-        <span x-text="processing ? '⏳' : '📷'"></span>
         <span x-text="processing ? KIOSK_I18N.processing : KIOSK_I18N.takePhoto"></span>
       </button>
     </div>
@@ -256,7 +255,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
     haltUntilClear: false,
 
     /** Human-readable status label shown in the bottom pill. */
-    autoStatusText: '👤 {% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}',
+    autoStatusText: '{% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}',
 
     /** CSS modifier class for the bottom pill. */
     autoStatusClass: 'auto-status-ready',
@@ -271,19 +270,19 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
       this.haltUntilClear = phase === 'halted' || phase === 'processing';
       switch (phase) {
         case 'locking':
-          this.autoStatusText  = '🎯 {% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}';
+          this.autoStatusText  = '{% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}';
           this.autoStatusClass = 'auto-status-locking';
           break;
         case 'processing':
-          this.autoStatusText  = '⏳ {% trans "กำลังประมวลผล…" %}';
+          this.autoStatusText  = '{% trans "กำลังประมวลผล…" %}';
           this.autoStatusClass = 'auto-status-processing';
           break;
         case 'halted':
-          this.autoStatusText  = '✋ {% trans "รอให้ออกจากกล้อง" %}';
+          this.autoStatusText  = '{% trans "รอให้ออกจากกล้อง" %}';
           this.autoStatusClass = 'auto-status-halted';
           break;
         default: // 'ready'
-          this.autoStatusText  = '👤 {% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}';
+          this.autoStatusText  = '{% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}';
           this.autoStatusClass = 'auto-status-ready';
           // Clear the result panel only when the kiosk fully resets to ready.
           this.message = '';

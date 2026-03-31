@@ -288,7 +288,7 @@
       <h2 class="h5 mb-0">
         {% trans "Check-in History" %}
         {% if unique_only %}
-          <span class="badge text-bg-info ms-2">👤 {% trans "Unique Only" %}</span>
+          <span class="badge text-bg-info ms-2">{% trans "Unique Only" %}</span>
         {% endif %}
       </h2>
     </div>
@@ -339,13 +339,13 @@
                 <td>
                   {% if checkin.anomaly_reasons %}
                     <span class="badge text-bg-warning"
-                          title="{{ checkin.anomaly_reasons|join:', ' }}">⚠ {% trans "Suspicious" %}</span>
+                          title="{{ checkin.anomaly_reasons|join:', ' }}">{% trans "Suspicious" %}</span>
                   {% endif %}
 
                   {% if checkin.matched %}
-                    <span class="badge text-bg-success">✓ {% trans "Matched" %}</span>
+                    <span class="badge text-bg-success">{% trans "Matched" %}</span>
                   {% else %}
-                    <span class="badge text-bg-danger">✗ {% trans "Unmatched" %}</span>
+                    <span class="badge text-bg-danger">{% trans "Unmatched" %}</span>
                   {% endif %}
                 </td>
                 <td>{{ checkin.checked_in_at }}</td>
@@ -361,7 +361,7 @@
                         aria-label="{% trans 'Remap check-in' %}"
                         title="{% trans 'Remap check-in' %}"
                         {% if not face_options %}disabled{% endif %}
-                      >✏️</button>
+                      >{% trans "Remap" %}</button>
 
                       <form method="post" action="{% url 'sessions:checkin_delete' checkin.pk %}" onsubmit="return confirm('{% trans "Delete this check-in?" %}');">
                         {% csrf_token %}
@@ -373,7 +373,7 @@
                           class="btn btn-outline-danger btn-sm"
                           aria-label="{% trans 'Delete check-in' %}"
                           title="{% trans 'Delete check-in' %}"
-                        >🗑️</button>
+                        >{% trans "Delete" %}</button>
                       </form>
                     </div>
                   </div>
