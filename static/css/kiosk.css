@@ -15,7 +15,7 @@ html, body {
   overflow: hidden;
   background: #0f1117;
   color: #f0f0f0;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: var(--app-font-family, "Google Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   overscroll-behavior: none;
 }
 
