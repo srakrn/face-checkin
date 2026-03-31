@@ -1,5 +1,7 @@
 from django.db import models
 
+from apps.image_utils import downscale_image_for_storage, jpeg_upload_name
+
 
 class FaceGroup(models.Model):
     """A named collection of enrolled faces (participants)."""
@@ -58,3 +60,18 @@ class Face(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.custom_id})"
+
+    def save(self, *args, **kwargs):
+        photo_field = self.photo
+        needs_processing = bool(photo_field) and not getattr(photo_field, "_committed", False)
+
+        if needs_processing:
+            photo_file = getattr(photo_field, "file", photo_field)
+            photo_name = getattr(photo_field, "name", getattr(photo_file, "name", "image"))
+            optimized_photo = downscale_image_for_storage(photo_file)
+            self.photo.save(
+                jpeg_upload_name(photo_name),
+                optimized_photo,
+                save=False,
+            )
+        super().save(*args, **kwargs)

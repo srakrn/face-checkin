@@ -15,8 +15,10 @@ import json
 import numpy as np
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
 from django.urls import reverse
+from PIL import Image
 
 from apps.checkin.models import CheckIn
 from apps.classes.models import Class
@@ -42,11 +44,21 @@ def _unit_vec(dim: int, index: int) -> list[float]:
 
 
 def _fake_image(name: str = "face.jpg") -> io.BytesIO:
-    """Return a minimal JPEG-like byte stream for upload tests."""
-    buf = io.BytesIO(b"\xff\xd8\xff\xe0" + b"\x00" * 100)
+    """Return a valid in-memory image for upload tests."""
+    buf = io.BytesIO()
+    Image.new("RGB", (32, 32), color="red").save(buf, format="JPEG")
     buf.name = name
     buf.seek(0)
     return buf
+
+
+def _large_image(name: str = "face.png") -> io.BytesIO:
+    """Return a large noisy PNG that should exceed the JPEG storage cap before optimization."""
+    rng = np.random.default_rng(1234)
+    pixels = rng.integers(0, 256, size=(2200, 2200, 3), dtype=np.uint8)
+    buf = io.BytesIO()
+    Image.fromarray(pixels).save(buf, format="PNG")
+    return SimpleUploadedFile(name, buf.getvalue(), content_type="image/png")
 
 
 # ---------------------------------------------------------------------------
@@ -161,6 +173,25 @@ class TestMatchedCheckin:
         data = response.json()
         assert "top_matches" in data
         assert len(data["top_matches"]) >= 1
+
+    def test_uploaded_face_image_is_downscaled_below_200kb(
+        self, client, active_session, enrolled_face
+    ):
+        face_image = _large_image()
+
+        response = client.post(
+            CHECKIN_MATCH_URL,
+            data={
+                "session_id": active_session.pk,
+                "embedding": json.dumps(_unit_vec(128, 0)),
+                "face_image": face_image,
+            },
+        )
+
+        assert response.status_code == 200
+        checkin = CheckIn.objects.get(pk=response.json()["checkin_id"])
+        assert checkin.raw_face_image.size < 200 * 1024
+        assert checkin.raw_face_image.name.endswith(".jpg")
 
 
 # ---------------------------------------------------------------------------

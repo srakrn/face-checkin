@@ -14,13 +14,13 @@ GET /api/sessions/<pk>/embeddings/
 import json
 
 from django.contrib.auth.decorators import login_required
-from django.core.files.base import ContentFile
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
+from apps.image_utils import downscale_image_for_storage
 from apps.sessions.models import Session
 
 from .matching import find_best_match, find_top_matches
@@ -99,9 +99,10 @@ def checkin_match(request):
         ip_address=ip_address,
         user_agent=user_agent,
     )
+    optimized_face_image = downscale_image_for_storage(face_image)
     checkin.raw_face_image.save(
         f"checkin_{session_id}_{checkin.pk or 'new'}.jpg",
-        face_image,
+        optimized_face_image,
         save=False,
     )
     checkin.save()

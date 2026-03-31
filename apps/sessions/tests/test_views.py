@@ -14,6 +14,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 from django.template.loader import render_to_string
 from django.utils.translation import override
+from PIL import Image
 
 from apps.checkin.models import CheckIn
 from apps.classes.models import Class
@@ -36,7 +37,8 @@ def _unit_vec(dim: int, index: int) -> list[float]:
 
 
 def _fake_image(name: str = "face.jpg") -> io.BytesIO:
-    buf = io.BytesIO(b"\xff\xd8\xff\xe0" + b"\x00" * 100)
+    buf = io.BytesIO()
+    Image.new("RGB", (32, 32), color="blue").save(buf, format="JPEG")
     buf.name = name
     buf.seek(0)
     return buf
