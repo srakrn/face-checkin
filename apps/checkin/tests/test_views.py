@@ -21,7 +21,7 @@ from django.urls import reverse
 from PIL import Image
 
 from apps.checkin.models import CheckIn
-from apps.classes.models import Class
+from apps.classes.models import Course
 from apps.faces.models import Face, FaceGroup
 from apps.sessions.models import Session
 
@@ -91,30 +91,60 @@ def face_group(db):
 
 
 @pytest.fixture
-def klass(face_group):
-    return Class.objects.create(name="Test Class", face_group=face_group)
+def owned_face_group(face_group, staff_user):
+    face_group.owner = staff_user
+    face_group.save(update_fields=["owner"])
+    return face_group
 
 
 @pytest.fixture
-def active_session(klass):
-    return Session.objects.create(klass=klass, name="Active Session")
+def course(owned_face_group, staff_user):
+    return Course.objects.create(
+        name="Test Course",
+        shorthand="TST",
+        face_group=owned_face_group,
+        owner=staff_user,
+    )
 
 
 @pytest.fixture
-def closed_session(klass):
-    session = Session.objects.create(klass=klass, name="Closed Session")
+def active_session(course):
+    return Session.objects.create(course=course, name="Active Session")
+
+
+@pytest.fixture
+def closed_session(course):
+    session = Session.objects.create(course=course, name="Closed Session")
     session.close()
     return session
 
 
 @pytest.fixture
-def enrolled_face(face_group):
+def enrolled_face(owned_face_group):
     """A face enrolled with a unit vector along axis 0."""
     return Face.objects.create(
-        face_group=face_group,
+        face_group=owned_face_group,
         name="Alice",
         custom_id="alice-001",
         embedding=_make_embedding_bytes(_unit_vec(128, 0)),
+    )
+
+
+@pytest.fixture
+def shared_user(db):
+    return get_user_model().objects.create_user(
+        username="shared",
+        password="password123",
+        is_staff=True,
+    )
+
+
+@pytest.fixture
+def outsider_user(db):
+    return get_user_model().objects.create_user(
+        username="outsider",
+        password="password123",
+        is_staff=True,
     )
 
 
@@ -405,3 +435,39 @@ class TestCheckinApiAuth:
 
         assert response.status_code == 302
         assert response["Location"] == f"/login/?next={CHECKIN_MATCH_URL}"
+
+    def test_shared_user_can_access_match_api(
+        self, active_session, enrolled_face, shared_user
+    ):
+        active_session.course.shared_with_users.add(shared_user)
+        client = Client()
+        client.force_login(shared_user)
+
+        response = client.post(
+            CHECKIN_MATCH_URL,
+            data={
+                "session_id": active_session.pk,
+                "embedding": json.dumps(_unit_vec(128, 0)),
+                "face_image": _fake_image(),
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["matched"] is True
+
+    def test_unshared_user_cannot_access_match_api(
+        self, active_session, outsider_user
+    ):
+        client = Client()
+        client.force_login(outsider_user)
+
+        response = client.post(
+            CHECKIN_MATCH_URL,
+            data={
+                "session_id": active_session.pk,
+                "embedding": json.dumps(_unit_vec(128, 0)),
+                "face_image": _fake_image(),
+            },
+        )
+
+        assert response.status_code == 404

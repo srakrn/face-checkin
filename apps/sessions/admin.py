@@ -2,19 +2,21 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
+from apps.classes.models import Course
+
 from .models import Session
 
 
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):
-    list_display = ("name", "klass", "state", "scheduled_at", "auto_close_at", "report_link", "kiosk_link", "qr_code_button")
-    list_filter = ("state", "klass__face_group")
-    search_fields = ("name", "klass__name")
+    list_display = ("name", "course", "state", "scheduled_at", "auto_close_at", "report_link", "kiosk_link", "qr_code_button")
+    list_filter = ("state", "course__face_group")
+    search_fields = ("name", "course__name")
     readonly_fields = ("created_at", "updated_at", "report_link")
     actions = ["close_sessions"]
     fieldsets = (
         (None, {
-            "fields": ("klass", "name", "state"),
+            "fields": ("course", "name", "state"),
         }),
         ("กำหนดเวลา", {
             "fields": ("scheduled_at", "auto_close_at"),
@@ -66,3 +68,14 @@ class SessionAdmin(admin.ModelAdmin):
             except ValueError:
                 pass
         self.message_user(request, f"ปิด {count} คาบเรียน")
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if request.user.is_superuser:
+            return queryset
+        return queryset.filter(course__in=Course.objects.accessible_to(request.user)).distinct()
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "course" and not request.user.is_superuser:
+            kwargs["queryset"] = Course.objects.accessible_to(request.user)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)

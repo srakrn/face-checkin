@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>SchimudtCHECK{% if session %}: {{ session.klass.name }} {{ session.name }}{% endif %}</title>
+  <title>SchimudtCHECK{% if session %}: {{ session.course.name }} {{ session.name }}{% endif %}</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,7 +34,7 @@
 {# ── Session closed ─────────────────────────────────────────────────────── #}
 <div class="kiosk-container">
   <h1 class="kiosk-title">{{ session.name }}</h1>
-  <p class="kiosk-subtitle">{{ session.klass.name }}</p>
+  <p class="kiosk-subtitle">{{ session.course.name }}</p>
   <div class="kiosk-state-panel">
     <div class="kiosk-state-icon">🔒</div>
     <div class="kiosk-state-title">{% trans "หมดเวลาเช็กอิน" %}</div>
@@ -91,7 +91,7 @@
   {# ── Top-left: session info badge ─────────────────────────────────────── #}
   <div class="kiosk-session-badge">
     <span class="kiosk-session-name">{{ session.name }}</span>
-    <span class="kiosk-class-name">{{ session.klass.name }}</span>
+    <span class="kiosk-class-name">{{ session.course.name }}</span>
   </div>
 
   {# ── Top-right: check-in result pop-up ────────────────────────────────── #}

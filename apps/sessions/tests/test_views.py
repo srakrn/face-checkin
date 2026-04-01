@@ -17,7 +17,7 @@ from django.utils.translation import override
 from PIL import Image
 
 from apps.checkin.models import CheckIn
-from apps.classes.models import Class
+from apps.classes.models import Course
 from apps.faces.models import Face, FaceGroup
 from apps.sessions.models import Session
 
@@ -69,23 +69,53 @@ def staff_user(db):
 
 
 @pytest.fixture
+def shared_user(db):
+    return get_user_model().objects.create_user(
+        username="shared",
+        password="password123",
+        is_staff=True,
+    )
+
+
+@pytest.fixture
+def outsider_user(db):
+    return get_user_model().objects.create_user(
+        username="outsider",
+        password="password123",
+        is_staff=True,
+    )
+
+
+@pytest.fixture
 def face_group(db):
     return FaceGroup.objects.create(name="Test Group")
 
 
 @pytest.fixture
-def klass(face_group):
-    return Class.objects.create(name="Test Class", face_group=face_group)
+def owned_face_group(face_group, staff_user):
+    face_group.owner = staff_user
+    face_group.save(update_fields=["owner"])
+    return face_group
 
 
 @pytest.fixture
-def draft_session(klass):
-    return Session.objects.create(klass=klass, name="Draft Session")
+def course(owned_face_group, staff_user):
+    return Course.objects.create(
+        name="Test Course",
+        shorthand="TST",
+        face_group=owned_face_group,
+        owner=staff_user,
+    )
 
 
 @pytest.fixture
-def active_session(klass):
-    return Session.objects.create(klass=klass, name="Active Session")
+def draft_session(course):
+    return Session.objects.create(course=course, name="Draft Session")
+
+
+@pytest.fixture
+def active_session(course):
+    return Session.objects.create(course=course, name="Active Session")
 
 
 @pytest.fixture
@@ -95,9 +125,9 @@ def closed_session(active_session):
 
 
 @pytest.fixture
-def enrolled_face(face_group):
+def enrolled_face(owned_face_group):
     return Face.objects.create(
-        face_group=face_group,
+        face_group=owned_face_group,
         name="Alice",
         custom_id="alice-001",
         embedding=_make_embedding_bytes(_unit_vec(128, 0)),
@@ -105,9 +135,9 @@ def enrolled_face(face_group):
 
 
 @pytest.fixture
-def second_enrolled_face(face_group):
+def second_enrolled_face(owned_face_group):
     return Face.objects.create(
-        face_group=face_group,
+        face_group=owned_face_group,
         name="Bob",
         custom_id="bob-002",
         embedding=_make_embedding_bytes(_unit_vec(128, 1)),
@@ -163,10 +193,10 @@ class TestSessionDetail:
         data = response.json()
         assert data["state"] == "active"
 
-    def test_returns_correct_class_id(self, auth_client, draft_session, klass):
+    def test_returns_correct_course_id(self, auth_client, draft_session, course):
         response = auth_client.get(f"/api/sessions/{draft_session.pk}/")
         data = response.json()
-        assert data["class_id"] == klass.pk
+        assert data["course_id"] == course.pk
 
     def test_scheduled_at_none_when_not_set(self, auth_client, draft_session):
         response = auth_client.get(f"/api/sessions/{draft_session.pk}/")
@@ -260,6 +290,47 @@ class TestSessionApiAuth:
 
 
 @pytest.mark.django_db
+class TestSessionObjectAccess:
+    def test_owner_can_access_session_detail(self, auth_client, active_session):
+        response = auth_client.get(f"/api/sessions/{active_session.pk}/")
+        assert response.status_code == 200
+
+    def test_shared_user_can_access_session_detail(self, shared_user, active_session):
+        active_session.course.shared_with_users.add(shared_user)
+        client = Client()
+        client.force_login(shared_user)
+
+        response = client.get(f"/api/sessions/{active_session.pk}/")
+
+        assert response.status_code == 200
+
+    def test_unshared_user_cannot_access_session_detail(self, outsider_user, active_session):
+        client = Client()
+        client.force_login(outsider_user)
+
+        response = client.get(f"/api/sessions/{active_session.pk}/")
+
+        assert response.status_code == 404
+
+    def test_shared_user_can_access_report_page(self, shared_user, active_session):
+        active_session.course.shared_with_users.add(shared_user)
+        client = Client()
+        client.force_login(shared_user)
+
+        response = client.get(f"/sessions/{active_session.pk}/report/")
+
+        assert response.status_code == 200
+
+    def test_unshared_user_cannot_access_checkin_image(self, outsider_user, checkin_matched):
+        client = Client()
+        client.force_login(outsider_user)
+
+        response = client.get(f"/sessions/checkins/{checkin_matched.pk}/image/")
+
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
 class TestCustomLoginFlow:
     def test_index_hides_active_sessions_when_logged_out(self, client, active_session):
         response = client.get("/")
@@ -282,6 +353,17 @@ class TestCustomLoginFlow:
         assert "Admin" in content
         assert "ออกจากระบบ" in content
 
+    def test_index_hides_inaccessible_sessions_from_logged_in_user(
+        self, client, outsider_user, active_session
+    ):
+        client.force_login(outsider_user)
+
+        response = client.get("/")
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert active_session.name not in content
+
     def test_login_page_renders(self, client):
         response = client.get("/login/")
 
@@ -294,12 +376,12 @@ class TestCustomLoginFlow:
 
 @pytest.mark.django_db
 class TestSessionStateMutationViews:
-    def test_class_session_list_renders_open_button_for_closed_session(
-        self, client, staff_user, klass, closed_session
+    def test_course_session_list_renders_open_button_for_closed_session(
+        self, client, staff_user, course, closed_session
     ):
         client.force_login(staff_user)
 
-        response = client.get(f"/sessions/classes/{klass.pk}/")
+        response = client.get(f"/sessions/courses/{course.pk}/")
 
         content = response.content.decode()
         assert response.status_code == 200
@@ -362,6 +444,25 @@ class TestSessionStateMutationViews:
 
         assert response.status_code == 302
         assert response["Location"] == "/login/?next=/sessions/"
+
+    def test_unshared_user_cannot_list_owner_class_sessions(
+        self, client, outsider_user, course
+    ):
+        client.force_login(outsider_user)
+
+        response = client.get(f"/sessions/courses/{course.pk}/")
+
+        assert response.status_code == 404
+
+    def test_shared_user_can_list_shared_class_sessions(
+        self, client, shared_user, course
+    ):
+        course.shared_with_users.add(shared_user)
+        client.force_login(shared_user)
+
+        response = client.get(f"/sessions/courses/{course.pk}/")
+
+        assert response.status_code == 200
 
 
 @pytest.mark.django_db

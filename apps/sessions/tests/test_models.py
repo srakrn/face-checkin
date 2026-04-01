@@ -13,7 +13,7 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
-from apps.classes.models import Class
+from apps.classes.models import Course
 from apps.faces.models import FaceGroup
 from apps.sessions.models import Session
 
@@ -28,13 +28,13 @@ def face_group(db):
 
 
 @pytest.fixture
-def klass(face_group):
-    return Class.objects.create(name="Test Class", face_group=face_group)
+def course(face_group):
+    return Course.objects.create(name="Test Course", shorthand="TST", face_group=face_group)
 
 
 @pytest.fixture
-def active_session(klass):
-    return Session.objects.create(klass=klass, name="Test Session")
+def active_session(course):
+    return Session.objects.create(course=course, name="Test Session")
 
 
 @pytest.fixture

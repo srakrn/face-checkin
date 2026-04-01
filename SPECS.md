@@ -84,12 +84,12 @@ erDiagram
         image photo
         int face_group_id FK
     }
-    ClassTag {
+    CourseTag {
         int id PK
-        int class_id FK
+        int course_id FK
         string tag
     }
-    Class {
+    Course {
         int id PK
         string name
         string description
@@ -101,7 +101,7 @@ erDiagram
         string state
         datetime scheduled_at
         datetime auto_close_at
-        int class_id FK
+        int course_id FK
     }
     CheckIn {
         int id PK
@@ -113,9 +113,9 @@ erDiagram
     }
 
     FaceGroup ||--o{ Face : contains
-    FaceGroup ||--o{ Class : used_by
-    Class ||--o{ ClassTag : has
-    Class ||--o{ Session : contains
+    FaceGroup ||--o{ Course : used_by
+    Course ||--o{ CourseTag : has
+    Course ||--o{ Session : contains
     Session ||--o{ CheckIn : records
     Face ||--o{ CheckIn : logs
     Face ||--o{ CheckIn : logs

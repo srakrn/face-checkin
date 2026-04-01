@@ -21,7 +21,7 @@ A Django web application for face-based attendance check-in.
 face-checkin/
 ├── apps/
 │   ├── faces/          # FaceGroup + Face models; enrollment logic
-│   ├── classes/        # Class + ClassTag models
+│   ├── classes/        # Course + CourseTag models
 │   ├── sessions/       # Session model + state machine + auto-close/open commands
 │   └── checkin/        # CheckIn model, matching logic, API views, kiosk view
 ├── face_checkin/
@@ -58,8 +58,8 @@ face-checkin/
 |-------|-----|-------|
 | `FaceGroup` | `apps.faces` | Collection of enrolled faces |
 | `Face` | `apps.faces` | Participant; stores embedding as raw `float32` bytes |
-| `Class` | `apps.classes` | Groups sessions; tied to one `FaceGroup` |
-| `ClassTag` | `apps.classes` | Many tags per class |
+| `Course` | `apps.classes` | Groups sessions; tied to one `FaceGroup` |
+| `CourseTag` | `apps.classes` | Many tags per course |
 | `Session` | `apps.sessions` | Check-in slot; states: `draft → active → closed` |
 | `CheckIn` | `apps.checkin` | Every attempt (matched or not); stores raw face image |
 

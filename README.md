@@ -148,7 +148,7 @@ The `FACE_MATCH_THRESHOLD` controls how strict the face matching is:
 
 1. Log in to the admin panel: http://localhost/admin/
 2. Navigate to **Face groups** → Add Face group
-3. Enter a name (e.g., "Class A Students")
+3. Enter a name (e.g., "Course A Students")
 4. Save
 
 ### 2. Enroll Faces
@@ -170,9 +170,9 @@ You can enroll faces in two ways:
 5. Click "Capture" to take photo
 6. The photo will be saved automatically
 
-### 3. Create Classes
+### 3. Create Courses
 
-1. Navigate to **Classes** → Add Class
+1. Navigate to **Courses** → Add Course
 2. Enter class name
 3. Select the associated Face group
 4. Add tags (optional)
@@ -444,7 +444,7 @@ uv run pytest --cov
 face-checkin/
 ├── apps/
 │   ├── faces/          # FaceGroup + Face models
-│   ├── classes/        # Class + ClassTag models
+│   ├── classes/        # Course + CourseTag models
 │   ├── sessions/       # Session model + management
 │   └── checkin/        # CheckIn model + matching + kiosk
 ├── face_checkin/       # Django project settings

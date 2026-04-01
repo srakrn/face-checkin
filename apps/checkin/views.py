@@ -18,6 +18,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.image_utils import downscale_image_for_storage
+from apps.classes.models import Course
 from apps.sessions.models import Session
 
 from .matching import find_best_match, find_top_matches
@@ -48,7 +49,10 @@ def checkin_match(request):
     if face_image is None:
         return JsonResponse({"error": _("face_image is required.")}, status=400)
 
-    session = get_object_or_404(Session, pk=session_id)
+    session_queryset = Session.objects.select_related("course", "course__face_group")
+    if not request.user.is_superuser:
+        session_queryset = session_queryset.filter(course__in=Course.objects.accessible_to(request.user))
+    session = get_object_or_404(session_queryset.distinct(), pk=session_id)
 
     if session.state != Session.State.ACTIVE:
         return JsonResponse({"error": _("Session is not active.")}, status=409)
@@ -58,7 +62,7 @@ def checkin_match(request):
         session.close()
         return JsonResponse({"error": _("Session has been automatically closed.")}, status=409)
 
-    face_group_id = session.klass.face_group_id
+    face_group_id = session.course.face_group_id
     matched_face = find_best_match(embedding, face_group_id)
 
     # Compute top-5 matches (always, for display purposes)

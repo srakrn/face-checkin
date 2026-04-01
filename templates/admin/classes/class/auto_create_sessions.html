@@ -5,15 +5,15 @@
 {% block breadcrumbs %}
 <div class="breadcrumbs">
   <a href="{% url 'admin:index' %}">หน้าหลัก</a> ›
-  <a href="{% url 'admin:classes_class_changelist' %}">วิชา</a> ›
-  <a href="{% url 'admin:classes_class_change' klass.pk %}">{{ klass.name }}</a> ›
+  <a href="{% url 'admin:classes_course_changelist' %}">วิชา</a> ›
+  <a href="{% url 'admin:classes_course_change' course.pk %}">{{ course.name }}</a> ›
   สร้างคาบเรียนอัตโนมัติ
 </div>
 {% endblock %}
 
 {% block content %}
 <p>
-  คาบเรียนจะถูกตั้งชื่อตามรูปแบบ <strong>YYYY-MM-DD {{ klass.shorthand }}</strong>
+  คาบเรียนจะถูกตั้งชื่อตามรูปแบบ <strong>YYYY-MM-DD {{ course.shorthand }}</strong>
   และสร้างในสถานะ <em>ปิด</em> เพื่อให้ระบบเปิดอัตโนมัติตามเวลาที่กำหนด
 </p>
 
@@ -80,7 +80,7 @@
 
   <div class="submit-row">
     <input type="submit" value="สร้างคาบเรียน" class="default">
-    <a href="{% url 'admin:classes_class_change' klass.pk %}" class="deletelink" style="float:right;">ยกเลิก</a>
+    <a href="{% url 'admin:classes_course_change' course.pk %}" class="deletelink" style="float:right;">ยกเลิก</a>
   </div>
 </form>
 

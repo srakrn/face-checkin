@@ -3,8 +3,12 @@ import json
 import numpy as np
 from django import forms
 from django.contrib import admin
+from django.contrib.auth import get_user_model
+from django.http import Http404
 
 from .models import Face, FaceGroup
+
+User = get_user_model()
 
 
 class FaceInlineForm(forms.ModelForm):
@@ -74,13 +78,14 @@ class FaceInline(admin.TabularInline):
 
 @admin.register(FaceGroup)
 class FaceGroupAdmin(admin.ModelAdmin):
-    list_display = ("name", "face_count", "created_at")
+    list_display = ("name", "owner", "face_count", "created_at")
     search_fields = ("name",)
     inlines = [FaceInline]
-    readonly_fields = ("created_at",)
+    readonly_fields = ("owner", "created_at")
+    filter_horizontal = ("shared_with_users",)
     fieldsets = (
         (None, {
-            "fields": ("name", "created_at"),
+            "fields": ("name", "owner", "shared_with_users", "created_at"),
         }),
     )
 
@@ -90,6 +95,26 @@ class FaceGroupAdmin(admin.ModelAdmin):
     @admin.display(description="จำนวนใบหน้า")
     def face_count(self, obj):
         return obj.faces.count()
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if request.user.is_superuser:
+            return queryset
+        return queryset.accessible_to(request.user)
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if "shared_with_users" in form.base_fields:
+            qs = User.objects.exclude(pk=request.user.pk).order_by("username")
+            if not request.user.is_superuser:
+                qs = qs.filter(is_superuser=False)
+            form.base_fields["shared_with_users"].queryset = qs
+        return form
+
+    def save_model(self, request, obj, form, change):
+        if not change and obj.owner_id is None:
+            obj.owner = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Face)
@@ -132,6 +157,23 @@ class FaceAdmin(admin.ModelAdmin):
     @admin.display(boolean=True, description="มีข้อมูลใบหน้า")
     def has_embedding(self, obj):
         return bool(obj.embedding)
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        if request.user.is_superuser:
+            return queryset
+        return queryset.filter(face_group__in=FaceGroup.objects.accessible_to(request.user)).distinct()
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "face_group" and not request.user.is_superuser:
+            kwargs["queryset"] = FaceGroup.objects.accessible_to(request.user)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def get_object(self, request, object_id, from_field=None):
+        obj = super().get_object(request, object_id, from_field=from_field)
+        if obj is None or request.user.is_superuser or obj.face_group.user_has_access(request.user):
+            return obj
+        raise Http404
 
     def save_model(self, request, obj, form, change):
         """

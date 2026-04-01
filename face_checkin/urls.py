@@ -35,13 +35,16 @@ def index(request):
     if not request.user.is_authenticated:
         return render(request, "landing.html")
 
+    from apps.classes.models import Course
     from apps.sessions.models import Session
 
     active_sessions = (
         Session.objects.filter(state="active")
-        .select_related("klass")
+        .select_related("course")
         .order_by("-scheduled_at")
     )
+    if not request.user.is_superuser:
+        active_sessions = active_sessions.filter(course__in=Course.objects.accessible_to(request.user)).distinct()
 
     return render(request, "index.html", {"active_sessions": active_sessions})
 

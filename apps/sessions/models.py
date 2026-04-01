@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from apps.classes.models import Class
+from apps.classes.models import Course
 
 
 class Session(models.Model):
@@ -11,11 +11,11 @@ class Session(models.Model):
         ACTIVE = "active", "เปิดให้เช็กอิน"
         CLOSED = "closed", "ปิดไม่ให้เช็กอิน"
 
-    klass = models.ForeignKey(
-        Class,
+    course = models.ForeignKey(
+        Course,
         on_delete=models.CASCADE,
         related_name="sessions",
-        db_column="class_id",
+        db_column="course_id",
         verbose_name="วิชา",
     )
     name = models.CharField(max_length=255, verbose_name="ชื่อคาบเรียน")

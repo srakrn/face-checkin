@@ -16,7 +16,7 @@ Legend: `[ ]` pending · `[-]` in progress · `[x]` done
 - [x] **TASK-004** Create settings split: `base.py`, `development.py`, `production.py`
 - [x] **TASK-005** Create root `urls.py` wiring all app URL modules
 - [x] **TASK-006** Create `apps/faces/` app with `FaceGroup` + `Face` models and admin
-- [x] **TASK-007** Create `apps/classes/` app with `Class` + `ClassTag` models and admin
+- [x] **TASK-007** Create `apps/classes/` app with `Course` + `CourseTag` models and admin
 - [x] **TASK-008** Create `apps/sessions/` app with `Session` model, state machine, and admin
 - [x] **TASK-009** Create `apps/checkin/` app with `CheckIn` model and admin
 - [x] **TASK-010** Create `apps/checkin/matching.py` — cosine similarity face matching

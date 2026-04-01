@@ -189,8 +189,8 @@
 
   <nav aria-label="breadcrumb" class="mb-3 report-screen-only">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="{% url 'sessions:index' %}">{% trans "All Classes" %}</a></li>
-      <li class="breadcrumb-item"><a href="{% url 'sessions:class_session_list' session.klass.pk %}">{{ session.klass.name }}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'sessions:index' %}">{% trans "All Courses" %}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'sessions:course_session_list' session.course.pk %}">{{ session.course.name }}</a></li>
       <li class="breadcrumb-item active" aria-current="page">{{ session.name }}</li>
     </ol>
   </nav>
@@ -198,7 +198,7 @@
   <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2 report-page-header">
     <div>
       <h1 class="h3 mb-1">{{ session.name }}</h1>
-      <div class="text-muted small">{% trans "Class" %}: {{ session.klass.name }}</div>
+      <div class="text-muted small">{% trans "Course" %}: {{ session.course.name }}</div>
     </div>
     <div class="d-flex gap-2 flex-wrap report-screen-only">
       <button type="button" class="btn btn-dark btn-sm" onclick="window.print()">

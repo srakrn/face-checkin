@@ -9,7 +9,7 @@ app_name = "sessions"
 urlpatterns = [
     # Session management UI
     path("", views.session_list, name="index"),
-    path("classes/<int:class_pk>/", views.class_session_list, name="class_session_list"),
+    path("courses/<int:course_pk>/", views.course_session_list, name="course_session_list"),
     path("checkins/<int:pk>/image/", views.checkin_image, name="checkin_image"),
     path("checkins/<int:pk>/remap/", views.checkin_remap, name="checkin_remap"),
     path("checkins/<int:pk>/delete/", views.checkin_delete, name="checkin_delete"),

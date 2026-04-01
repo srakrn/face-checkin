@@ -37,17 +37,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name="session",
-            name="klass",
-            field=models.ForeignKey(
-                db_column="class_id",
-                on_delete=django.db.models.deletion.CASCADE,
-                related_name="sessions",
-                to="classes.class",
-                verbose_name="วิชา",
-            ),
-        ),
-        migrations.AlterField(
-            model_name="session",
             name="name",
             field=models.CharField(max_length=255, verbose_name="ชื่อคาบเรียน"),
         ),

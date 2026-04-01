@@ -8,17 +8,17 @@
     <h1 class="h3 mb-0">{% trans "รายวิชาทั้งหมด" %}</h1>
   </div>
 
-  {% if all_classes %}
+  {% if all_courses %}
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-      {% for klass in all_classes %}
+      {% for course in all_courses %}
         <div class="col">
-          <a href="{% url 'sessions:class_session_list' klass.pk %}" class="text-decoration-none">
+          <a href="{% url 'sessions:course_session_list' course.pk %}" class="text-decoration-none">
             <div class="card h-100">
               <div class="card-body">
-                <h5 class="card-title">{{ klass.name }}</h5>
+                <h5 class="card-title">{{ course.name }}</h5>
                 <p class="card-text text-muted small">
-                  {% blocktrans with count=klass.sessions.count %}{{ count }} คาบเรียน{% endblocktrans %}
-                  &nbsp;·&nbsp; {% trans "กลุ่มใบหน้า" %}: {{ klass.face_group.name }}
+                  {% blocktrans with count=course.sessions.count %}{{ count }} คาบเรียน{% endblocktrans %}
+                  &nbsp;·&nbsp; {% trans "กลุ่มใบหน้า" %}: {{ course.face_group.name }}
                 </p>
               </div>
             </div>
@@ -29,7 +29,7 @@
   {% else %}
     <div class="card">
       <div class="card-body text-center text-muted py-5">
-        <p class="mb-0">{% trans "ยังไม่มีวิชา" %} <a href="{% url 'admin:classes_class_add' %}">{% trans "สร้างได้ที่ Admin" %}</a></p>
+        <p class="mb-0">{% trans "ยังไม่มีวิชา" %} <a href="{% url 'admin:classes_course_add' %}">{% trans "สร้างได้ที่ Admin" %}</a></p>
       </div>
     </div>
   {% endif %}

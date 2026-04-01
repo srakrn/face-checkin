@@ -1,13 +1,40 @@
+from django.conf import settings
 from django.db import models
+from django.db.models import Q
 
 from apps.image_utils import downscale_image_for_storage, jpeg_upload_name
+
+
+class FaceGroupQuerySet(models.QuerySet):
+    def accessible_to(self, user):
+        if user.is_superuser:
+            return self
+        if not user.is_authenticated:
+            return self.none()
+        return self.filter(Q(owner=user) | Q(shared_with_users=user)).distinct()
 
 
 class FaceGroup(models.Model):
     """A named collection of enrolled faces (participants)."""
 
     name = models.CharField(max_length=255, verbose_name="ชื่อกลุ่ม")
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="owned_face_groups",
+        verbose_name="เจ้าของ",
+    )
+    shared_with_users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank=True,
+        related_name="shared_face_groups",
+        verbose_name="แชร์กับผู้ใช้",
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="สร้างเมื่อ")
+
+    objects = FaceGroupQuerySet.as_manager()
 
     class Meta:
         ordering = ["-created_at"]
@@ -16,6 +43,15 @@ class FaceGroup(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def user_has_access(self, user) -> bool:
+        if not user.is_authenticated:
+            return False
+        if user.is_superuser:
+            return True
+        if self.owner_id == user.pk:
+            return True
+        return self.shared_with_users.filter(pk=user.pk).exists()
 
 
 class Face(models.Model):

@@ -16,7 +16,7 @@ import pytest
 from django.core.management import call_command
 from django.utils import timezone
 
-from apps.classes.models import Class
+from apps.classes.models import Course
 from apps.faces.models import FaceGroup
 from apps.sessions.models import Session
 
@@ -31,13 +31,13 @@ def face_group(db):
 
 
 @pytest.fixture
-def klass(face_group):
-    return Class.objects.create(name="Test Class", face_group=face_group)
+def course(face_group):
+    return Course.objects.create(name="Test Course", shorthand="TST", face_group=face_group)
 
 
-def _make_closed_session(klass, name: str, scheduled_at=None) -> Session:
+def _make_closed_session(course, name: str, scheduled_at=None) -> Session:
     session = Session.objects.create(
-        klass=klass,
+        course=course,
         name=name,
         scheduled_at=scheduled_at,
     )
@@ -45,9 +45,9 @@ def _make_closed_session(klass, name: str, scheduled_at=None) -> Session:
     return session
 
 
-def _make_active_session(klass, name: str, scheduled_at=None) -> Session:
+def _make_active_session(course, name: str, scheduled_at=None) -> Session:
     return Session.objects.create(
-        klass=klass,
+        course=course,
         name=name,
         scheduled_at=scheduled_at,
     )
@@ -66,29 +66,29 @@ def _run_command() -> str:
 
 @pytest.mark.django_db
 class TestAutoOpenSessions:
-    def test_opens_closed_session_past_scheduled_at(self, klass):
+    def test_opens_closed_session_past_scheduled_at(self, course):
         past = timezone.now() - timedelta(minutes=5)
-        session = _make_closed_session(klass, "Overdue", scheduled_at=past)
+        session = _make_closed_session(course, "Overdue", scheduled_at=past)
 
         _run_command()
 
         session.refresh_from_db()
         assert session.state == Session.State.ACTIVE
 
-    def test_does_not_open_closed_session_before_scheduled_at(self, klass):
+    def test_does_not_open_closed_session_before_scheduled_at(self, course):
         future = timezone.now() + timedelta(hours=1)
-        session = _make_closed_session(klass, "Future", scheduled_at=future)
+        session = _make_closed_session(course, "Future", scheduled_at=future)
 
         _run_command()
 
         session.refresh_from_db()
         assert session.state == Session.State.CLOSED
 
-    def test_does_not_reopen_session_after_auto_close_time_has_passed(self, klass):
+    def test_does_not_reopen_session_after_auto_close_time_has_passed(self, course):
         past_start = timezone.now() - timedelta(hours=2)
         past_end = timezone.now() - timedelta(hours=1)
         session = Session.objects.create(
-            klass=klass,
+            course=course,
             name="Expired Session",
             scheduled_at=past_start,
             auto_close_at=past_end,
@@ -100,28 +100,28 @@ class TestAutoOpenSessions:
         session.refresh_from_db()
         assert session.state == Session.State.CLOSED
 
-    def test_does_not_open_closed_session_without_scheduled_at(self, klass):
-        session = _make_closed_session(klass, "No Schedule", scheduled_at=None)
+    def test_does_not_open_closed_session_without_scheduled_at(self, course):
+        session = _make_closed_session(course, "No Schedule", scheduled_at=None)
 
         _run_command()
 
         session.refresh_from_db()
         assert session.state == Session.State.CLOSED
 
-    def test_does_not_touch_active_session(self, klass):
+    def test_does_not_touch_active_session(self, course):
         past = timezone.now() - timedelta(minutes=5)
-        session = _make_active_session(klass, "Already Active", scheduled_at=past)
+        session = _make_active_session(course, "Already Active", scheduled_at=past)
 
         _run_command()
 
         session.refresh_from_db()
         assert session.state == Session.State.ACTIVE
 
-    def test_opens_multiple_overdue_sessions(self, klass):
+    def test_opens_multiple_overdue_sessions(self, course):
         past = timezone.now() - timedelta(minutes=5)
-        s1 = _make_closed_session(klass, "Overdue 1", scheduled_at=past)
-        s2 = _make_closed_session(klass, "Overdue 2", scheduled_at=past)
-        s3 = _make_closed_session(klass, "Overdue 3", scheduled_at=past)
+        s1 = _make_closed_session(course, "Overdue 1", scheduled_at=past)
+        s2 = _make_closed_session(course, "Overdue 2", scheduled_at=past)
+        s3 = _make_closed_session(course, "Overdue 3", scheduled_at=past)
 
         _run_command()
 
@@ -129,11 +129,11 @@ class TestAutoOpenSessions:
             s.refresh_from_db()
             assert s.state == Session.State.ACTIVE
 
-    def test_only_opens_overdue_sessions_not_future_ones(self, klass):
+    def test_only_opens_overdue_sessions_not_future_ones(self, course):
         past = timezone.now() - timedelta(minutes=5)
         future = timezone.now() + timedelta(hours=1)
-        overdue = _make_closed_session(klass, "Overdue", scheduled_at=past)
-        upcoming = _make_closed_session(klass, "Upcoming", scheduled_at=future)
+        overdue = _make_closed_session(course, "Overdue", scheduled_at=past)
+        upcoming = _make_closed_session(course, "Upcoming", scheduled_at=future)
 
         _run_command()
 
@@ -142,22 +142,22 @@ class TestAutoOpenSessions:
         assert overdue.state == Session.State.ACTIVE
         assert upcoming.state == Session.State.CLOSED
 
-    def test_command_outputs_opened_count(self, klass):
+    def test_command_outputs_opened_count(self, course):
         past = timezone.now() - timedelta(minutes=5)
-        _make_closed_session(klass, "Overdue 1", scheduled_at=past)
-        _make_closed_session(klass, "Overdue 2", scheduled_at=past)
+        _make_closed_session(course, "Overdue 1", scheduled_at=past)
+        _make_closed_session(course, "Overdue 2", scheduled_at=past)
 
         output = _run_command()
 
         assert "2" in output
 
-    def test_command_outputs_zero_when_nothing_to_open(self, klass):
+    def test_command_outputs_zero_when_nothing_to_open(self, course):
         output = _run_command()
         assert "0" in output
 
-    def test_command_mentions_opened_session_name_in_output(self, klass):
+    def test_command_mentions_opened_session_name_in_output(self, course):
         past = timezone.now() - timedelta(minutes=5)
-        _make_closed_session(klass, "My Special Session", scheduled_at=past)
+        _make_closed_session(course, "My Special Session", scheduled_at=past)
 
         output = _run_command()
 

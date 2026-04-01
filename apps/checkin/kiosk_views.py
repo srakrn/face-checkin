@@ -9,6 +9,7 @@ appropriate error panels for closed / not-found sessions.
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
+from apps.classes.models import Course
 from apps.sessions.models import Session
 
 
@@ -21,8 +22,11 @@ def kiosk(request, session_id: int):
         session        — Session instance (or None if not found)
         session_state  — one of: "active" | "closed" | "not_found"
     """
+    session_queryset = Session.objects.select_related("course", "course__face_group")
+    if not request.user.is_superuser:
+        session_queryset = session_queryset.filter(course__in=Course.objects.accessible_to(request.user))
     try:
-        session = Session.objects.get(pk=session_id)
+        session = session_queryset.distinct().get(pk=session_id)
     except Session.DoesNotExist:
         return render(
             request,
