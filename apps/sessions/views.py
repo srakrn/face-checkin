@@ -91,7 +91,7 @@ def session_report(request, pk: int):
 
 @login_required
 def course_session_list(request, course_pk: int):
-    """GET /sessions/courses/<course_pk>/ — list all sessions for a course."""
+    """GET /courses/<course_pk>/sessions/ — list all sessions for a course."""
     course = get_object_or_404(_accessible_classes(request.user), pk=course_pk)
     sessions = course.sessions.all()
     all_courses = _accessible_classes(request.user).order_by("name")
@@ -108,7 +108,7 @@ def course_session_list(request, course_pk: int):
 
 @login_required
 def session_list(request):
-    """GET /sessions/ — list all courses (entry point for session management)."""
+    """GET /courses/ — list all courses (entry point for session management)."""
     all_courses = _accessible_classes(request.user).prefetch_related("sessions").order_by("name")
     return render(
         request,

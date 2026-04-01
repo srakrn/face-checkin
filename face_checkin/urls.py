@@ -90,8 +90,8 @@ urlpatterns = [
     path("api/", include("apps.checkin.urls")),
     # Sessions JSON API (detail + report)
     path("api/sessions/", include("apps.sessions.api_urls")),
-    # Session management UI (HTMX)
-    path("sessions/", include("apps.sessions.urls")),
+    # Course/session management UI (HTML + HTMX)
+    path("", include(("apps.sessions.urls", "sessions"), namespace="sessions")),
     # Kiosk HTML page
     path("", include("apps.checkin.kiosk_urls")),
 ]

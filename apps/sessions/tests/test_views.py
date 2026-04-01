@@ -381,7 +381,7 @@ class TestSessionStateMutationViews:
     ):
         client.force_login(staff_user)
 
-        response = client.get(f"/sessions/courses/{course.pk}/")
+        response = client.get(f"/courses/{course.pk}/sessions/")
 
         content = response.content.decode()
         assert response.status_code == 200
@@ -411,12 +411,12 @@ class TestSessionStateMutationViews:
 
     def test_login_redirects_to_next_url_when_credentials_are_valid(self, client, staff_user):
         response = client.post(
-            "/login/?next=/sessions/",
+            "/login/?next=/courses/",
             {"username": "staff", "password": "password123"},
         )
 
         assert response.status_code == 302
-        assert response["Location"] == "/sessions/"
+        assert response["Location"] == "/courses/"
 
     def test_login_shows_error_for_invalid_credentials(self, client):
         response = client.post(
@@ -440,17 +440,17 @@ class TestSessionStateMutationViews:
         assert "เข้าสู่ระบบ" in content
 
     def test_session_pages_redirect_to_custom_login(self, client):
-        response = client.get("/sessions/")
+        response = client.get("/courses/")
 
         assert response.status_code == 302
-        assert response["Location"] == "/login/?next=/sessions/"
+        assert response["Location"] == "/login/?next=/courses/"
 
     def test_unshared_user_cannot_list_owner_class_sessions(
         self, client, outsider_user, course
     ):
         client.force_login(outsider_user)
 
-        response = client.get(f"/sessions/courses/{course.pk}/")
+        response = client.get(f"/courses/{course.pk}/sessions/")
 
         assert response.status_code == 404
 
@@ -460,7 +460,7 @@ class TestSessionStateMutationViews:
         course.shared_with_users.add(shared_user)
         client.force_login(shared_user)
 
-        response = client.get(f"/sessions/courses/{course.pk}/")
+        response = client.get(f"/courses/{course.pk}/sessions/")
 
         assert response.status_code == 200
 
