@@ -1,6 +1,5 @@
 {% load static i18n %}
 <tr id="session-row-{{ session.pk }}">
-  <td>{{ session.pk }}</td>
   <td>
     <strong>{{ session.name }}</strong>
     {% if session.state == "active" %}
