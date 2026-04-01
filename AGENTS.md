@@ -72,7 +72,6 @@ face-checkin/
 | `POST` | `/api/checkin/match/` | `apps.checkin.views.checkin_match` | Submit embedding + image; returns match result |
 | `GET` | `/api/sessions/<pk>/` | `apps.sessions.views.session_detail` | Session state |
 | `GET` | `/api/sessions/<pk>/report/` | `apps.sessions.views.session_report` | Check-in report |
-| `GET` | `/api/sessions/<pk>/embeddings/` | `apps.checkin.views.session_embeddings` | All embeddings for client-side caching |
 | `GET` | `/kiosk/<session_id>/` | `apps.checkin.kiosk_views.kiosk` | Kiosk HTML page |
 | `GET` | `/health/` | — | Health check endpoint |
 

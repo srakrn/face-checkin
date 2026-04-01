@@ -387,7 +387,6 @@ No additional download is required.
 | `POST` | `/api/checkin/match/` | Submit face embedding for matching |
 | `GET` | `/api/sessions/<pk>/` | Get session details |
 | `GET` | `/api/sessions/<pk>/report/` | Get session check-in report |
-| `GET` | `/api/sessions/<pk>/embeddings/` | Get all embeddings for caching |
 | `GET` | `/kiosk/<session_id>/` | Kiosk check-in page |
 | `GET` | `/health/` | Health check endpoint |
 

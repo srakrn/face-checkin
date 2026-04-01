@@ -128,15 +128,14 @@ erDiagram
 | POST | `/api/checkin/match/` | Receive face embedding + raw face image, match against face group, log check-in |
 | GET | `/api/sessions/{id}/` | Get session details and state |
 | GET | `/api/sessions/{id}/report/` | Get check-in report for a session |
-| GET | `/api/sessions/{id}/embeddings/` | Get all embeddings for the session's face group (for potential client-side caching) |
 
 > Note: Most admin CRUD operations (face groups, faces, classes, sessions) will be handled through Django's admin interface or Django-template-based views with HTMX, rather than a separate REST API.
 
 ## Technical considerations
 
 - **Face embedding on-device**: Face detection and embedding extraction are done entirely in the browser using face-api.js. The raw face image is also sent to the server alongside the embedding for audit storage.
-- **Face matching on server**: The server receives embeddings and compares them against stored embeddings using cosine similarity or Euclidean distance. A configurable similarity threshold determines match/no-match.
-- **Embedding storage**: Face embeddings are stored in the database alongside face records. When a session is active, the server loads the relevant face group's embeddings into memory for fast comparison.
+- **Face matching on server**: The browser computes the face embedding locally, then sends it to the server. The server compares it against stored embeddings using cosine similarity. A configurable similarity threshold determines match/no-match.
+- **Embedding storage**: Face embeddings are stored in the database alongside face records. During a check-in request, the server loads the relevant face group's embeddings for comparison.
 - **Duplicate check-ins**: All check-ins are logged server-side regardless of duplicates (each with its own raw face image). The kiosk UI shows a distinct message for repeat check-ins within the same session.
 - **Audit trail**: Raw face images are stored for every check-in attempt (both matched and unmatched) to support post-hoc auditing and dispute resolution.
 - **Session auto-close**: Sessions with an auto-close time are automatically transitioned to Closed state via a background task (e.g., Django management command, Celery task, or a simple scheduled check).

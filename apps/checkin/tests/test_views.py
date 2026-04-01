@@ -405,13 +405,3 @@ class TestCheckinApiAuth:
 
         assert response.status_code == 302
         assert response["Location"] == f"/login/?next={CHECKIN_MATCH_URL}"
-
-    def test_anonymous_user_is_redirected_from_embeddings_api(
-        self, anon_client, active_session
-    ):
-        response = anon_client.get(
-            reverse("checkin_api:embeddings", args=[active_session.pk])
-        )
-
-        assert response.status_code == 302
-        assert response["Location"] == f"/login/?next=/api/sessions/{active_session.pk}/embeddings/"

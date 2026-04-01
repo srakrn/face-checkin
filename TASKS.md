@@ -22,7 +22,6 @@ Legend: `[ ]` pending · `[-]` in progress · `[x]` done
 - [x] **TASK-010** Create `apps/checkin/matching.py` — cosine similarity face matching
 - [x] **TASK-011** Create `POST /api/checkin/match/` view (`apps/checkin/views.py`)
 - [x] **TASK-012** Create `GET /api/sessions/<pk>/` and `GET /api/sessions/<pk>/report/` views
-- [x] **TASK-013** Create `GET /api/sessions/<pk>/embeddings/` view
 - [x] **TASK-014** Create kiosk HTML view (`apps/checkin/kiosk_views.py` + `templates/checkin/kiosk.html`)
 - [x] **TASK-015** Create `auto_close_sessions` management command
 - [x] **TASK-016** Create `Dockerfile` (Python 3.12-slim, gunicorn)
@@ -74,9 +73,9 @@ Legend: `[ ]` pending · `[-]` in progress · `[x]` done
   - Files: `templates/checkin/kiosk.html`, `apps/checkin/kiosk_views.py`
   - Acceptance: If the session is `closed` or `draft`, the kiosk shows a clear message instead of the camera
 
-- [x] **TASK-304** Implement client-side embedding cache using `/api/sessions/<pk>/embeddings/`
+- [x] **TASK-304** Use browser-computed embeddings with server-side matching only
   - Files: `templates/checkin/kiosk.html`
-  - Acceptance: On page load, the kiosk fetches all embeddings and stores them in memory; matching is done client-side first, then confirmed server-side
+  - Acceptance: The browser computes the embedding locally, submits it with the captured face image, and the server performs the authoritative comparison without exposing enrolled embeddings to the client
 
 ---
 

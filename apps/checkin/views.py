@@ -7,8 +7,6 @@ POST /api/checkin/match/
         embedding   — JSON array of floats (128-d face-api.js descriptor)
         face_image  — image file (raw face crop)
 
-GET /api/sessions/<pk>/embeddings/
-    Returns all embeddings for the session's face group (for client-side caching).
 """
 
 import json
@@ -17,7 +15,6 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.image_utils import downscale_image_for_storage
@@ -28,7 +25,6 @@ from .models import CheckIn
 
 
 @login_required
-@csrf_exempt
 @require_POST
 def checkin_match(request):
     """
@@ -130,33 +126,3 @@ def checkin_match(request):
                 "top_matches": top_matches_data,
             }
         )
-
-
-@login_required
-@require_GET
-def session_embeddings(request, pk: int):
-    """
-    GET /api/sessions/<pk>/embeddings/
-    Return all face embeddings for the session's face group.
-    Useful for client-side caching / offline matching.
-    """
-    session = get_object_or_404(Session, pk=pk)
-    faces = session.klass.face_group.faces.filter(embedding__isnull=False)
-
-    import numpy as np
-
-    data = []
-    for face in faces:
-        vec = list(
-            map(float, np.frombuffer(bytes(face.embedding), dtype="float32"))
-        )
-        data.append(
-            {
-                "face_id": face.pk,
-                "custom_id": face.custom_id,
-                "name": face.name,
-                "embedding": vec,
-            }
-        )
-
-    return JsonResponse({"session_id": pk, "embeddings": data})

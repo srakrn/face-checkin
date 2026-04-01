@@ -62,13 +62,12 @@
   x-data="kioskApp(
     '{% url 'checkin_api:match' %}',
     '{% static 'js/face-api/models' %}',
-    {{ session.id }},
-    '{% url 'checkin_api:embeddings' session.id %}'
+    {{ session.id }}
   )"
   class="kiosk-fullscreen"
 >
 
-  {# ── Loading overlay (models + embeddings) ───────────────────────────── #}
+  {# ── Loading overlay (face models) ────────────────────────────────────── #}
   <template x-if="loading">
     <div class="kiosk-loading-overlay">
       <div class="kiosk-spinner"></div>
@@ -169,7 +168,7 @@ const KIOSK_I18N = {
  *   TASK-301  Full-screen styled layout (CSS in kiosk.css)
  *   TASK-302  Real-time face detection overlay via requestAnimationFrame
  *   TASK-303  Session state error panels (handled server-side above)
- *   TASK-304  Client-side embedding cache; client-side match confirmed server-side
+ *   Server-side matching: browser computes the embedding, server compares it
  *   TASK-305  Auto-capture: stable face → auto photo → halt until clear → ready
  *
  * Auto-capture state machine
@@ -182,9 +181,8 @@ const KIOSK_I18N = {
  * @param {string} matchUrl        POST endpoint for server-side match confirmation
  * @param {string} modelPath       URL prefix for face-api.js model weights
  * @param {number} sessionId       Django Session PK
- * @param {string} embeddingsUrl   GET endpoint returning all session embeddings
  */
-function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
+function kioskApp(matchUrl, modelPath, sessionId) {
 
   // ── Auto-capture tuning constants ─────────────────────────────────────────
   /** Milliseconds a face must remain stable before the shutter fires. */
@@ -213,9 +211,6 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
      * @type {Array<{face_id: number, custom_id: string, name: string, similarity: number}>}
      */
     topMatches: [],
-
-    /** @type {Array<{face_id: number, custom_id: string, name: string, embedding: Float32Array}>} */
-    cachedEmbeddings: [],
 
     /** requestAnimationFrame handle for the overlay loop */
     _rafHandle: null,
@@ -305,25 +300,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         return;
       }
 
-      // 2. Fetch and cache embeddings from the server
-      this.loadingMessage = '{% trans "กำลังดึงข้อมูลใบหน้าผู้เข้าร่วม…" %}';
-      try {
-        const resp = await fetch(embeddingsUrl);
-        if (resp.ok) {
-          const data = await resp.json();
-          this.cachedEmbeddings = (data.embeddings || []).map(e => ({
-            face_id: e.face_id,
-            custom_id: e.custom_id,
-            name: e.name,
-            embedding: new Float32Array(e.embedding),
-          }));
-        }
-        // Non-OK response is non-fatal — fall back to server-only matching
-      } catch (_) {
-        // Network error fetching embeddings — fall back to server-only matching
-      }
-
-      // 3. Start camera — wait for Alpine to render the video element first
+      // 2. Start camera — wait for Alpine to render the video element first
       this.loading = false;
       await this.$nextTick();
       try {
@@ -342,7 +319,7 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
         this.showMessage('{% trans "ไม่สามารถเข้าถึงกล้องได้" %}: ' + err.message, 'error');
       }
 
-      // 4. Poll session state every ~60 s; reload if it changes (e.g. closed)
+      // 3. Poll session state every ~60 s; reload if it changes (e.g. closed)
       this._startSessionPoll();
     },
 
@@ -588,46 +565,6 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
       }
     },
 
-    // ── client-side cosine similarity (TASK-304) ───────────────────────────
-
-    /**
-     * Compute cosine similarity between two Float32Array vectors.
-     * Returns a value in [-1, 1]; higher = more similar.
-     */
-    _cosineSimilarity(a, b) {
-      let dot = 0, normA = 0, normB = 0;
-      for (let i = 0; i < a.length; i++) {
-        dot   += a[i] * b[i];
-        normA += a[i] * a[i];
-        normB += b[i] * b[i];
-      }
-      if (normA === 0 || normB === 0) return 0;
-      return dot / (Math.sqrt(normA) * Math.sqrt(normB));
-    },
-
-    /**
-     * Find the best client-side match for a descriptor.
-     * Returns { face_id, name, custom_id, similarity } or null if no match
-     * exceeds the threshold.
-     *
-     * Threshold mirrors the server default (0.6 cosine similarity).
-     */
-    _clientSideMatch(descriptor, threshold = 0.6) {
-      let best = null;
-      let bestSim = -Infinity;
-      for (const entry of this.cachedEmbeddings) {
-        const sim = this._cosineSimilarity(descriptor, entry.embedding);
-        if (sim > bestSim) {
-          bestSim = sim;
-          best = entry;
-        }
-      }
-      if (best && bestSim >= threshold) {
-        return { ...best, similarity: bestSim };
-      }
-      return null;
-    },
-
     // ── photo capture & submission ─────────────────────────────────────────
 
     async takePhoto() {
@@ -664,25 +601,6 @@ function kioskApp(matchUrl, modelPath, sessionId, embeddingsUrl) {
 
       const descriptor = detection.descriptor; // Float32Array(128)
       const embedding = Array.from(descriptor);
-
-      // ── TASK-304: client-side pre-check ───────────────────────────────────
-      // If we have cached embeddings, do a quick local match first.
-      // This gives instant feedback and reduces server load.
-      // We still always confirm with the server (authoritative).
-      if (this.cachedEmbeddings.length > 0) {
-        const clientMatch = this._clientSideMatch(descriptor);
-        if (!clientMatch) {
-          // Client-side says no match — skip server round-trip
-          this.showMessage('{% trans "ไม่พบใบหน้าที่ตรงกัน กรุณาลองใหม่หรือติดต่อเจ้าหน้าที่" %}', 'error');
-          this.processing = false;
-          this._setPhase('halted');
-          this._clearSince = null;
-          return;
-        }
-        // Client-side found a candidate — show optimistic feedback while
-        // the server confirms.
-        this.showMessage(`{% trans "กำลังตรวจสอบ…" %} ${clientMatch.name}`, 'info');
-      }
 
       // Convert canvas to blob for server submission
       const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
