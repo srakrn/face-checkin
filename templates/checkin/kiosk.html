@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="csrf-token" content="{{ csrf_token }}" />
   <title>SchimudtCHECK{% if session %}: {{ session.course.name }} {{ session.name }}{% endif %}</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -183,6 +184,15 @@ const KIOSK_I18N = {
  * @param {number} sessionId       Django Session PK
  */
 function kioskApp(matchUrl, modelPath, sessionId) {
+  function getCsrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta && meta.content) return meta.content;
+
+    const cookie = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('csrftoken='));
+    return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
+  }
 
   // ── Auto-capture tuning constants ─────────────────────────────────────────
   /** Milliseconds a face must remain stable before the shutter fires. */
@@ -611,7 +621,13 @@ function kioskApp(matchUrl, modelPath, sessionId) {
       formData.append('face_image', blob, 'face.jpg');
 
       try {
-        const resp = await fetch(matchUrl, { method: 'POST', body: formData });
+        const resp = await fetch(matchUrl, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+          },
+        });
         const data = await resp.json();
 
         if (!resp.ok) {

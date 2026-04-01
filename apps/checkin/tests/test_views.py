@@ -418,6 +418,13 @@ class TestKioskPageAuth:
 
         assert response.status_code == 200
         assert response.context["session"] == active_session
+
+    def test_authenticated_kiosk_page_sets_csrf_cookie_and_meta_token(self, client, active_session):
+        response = client.get(reverse("kiosk:kiosk", args=[active_session.pk]))
+
+        assert response.status_code == 200
+        assert "csrftoken" in response.cookies
+        assert 'meta name="csrf-token"' in response.content.decode()
         assert response.context["session_state"] == "active"
 
 
