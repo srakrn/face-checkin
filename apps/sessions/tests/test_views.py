@@ -466,6 +466,22 @@ class TestSessionStateMutationViews:
 
 
 @pytest.mark.django_db
+class TestUserBootstrapPermissions:
+    def test_new_user_gets_staff_access_and_project_permissions(self):
+        user = get_user_model().objects.create_user(
+            username="autheditor",
+            password="password123",
+        )
+        user.refresh_from_db()
+
+        assert user.is_staff is True
+        assert user.has_perm("faces.view_facegroup")
+        assert user.has_perm("classes.add_course")
+        assert user.has_perm("checkin_sessions.change_session")
+        assert user.has_perm("checkin.view_checkin")
+
+
+@pytest.mark.django_db
 class TestSessionReportPage:
     def test_renders_thai_translations_and_face_image(
         self, client, staff_user, active_session, checkin_matched
