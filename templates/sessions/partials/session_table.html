@@ -4,11 +4,11 @@
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
         <tr>
-          <th>{% trans "ชื่อคาบเรียน" %}</th>
-          <th>{% trans "สถานะ" %}</th>
-          <th>{% trans "เวลาเริ่มต้น" %}</th>
-          <th>{% trans "ปิดอัตโนมัติเมื่อ" %}</th>
-          <th>{% trans "การดำเนินการ" %}</th>
+          <th>{% trans "Session Name" %}</th>
+          <th>{% trans "Status" %}</th>
+          <th>{% trans "Start Time" %}</th>
+          <th>{% trans "Auto-close At" %}</th>
+          <th>{% trans "Actions" %}</th>
         </tr>
       </thead>
       <tbody id="session-rows">
@@ -20,6 +20,6 @@
   </div>
 {% else %}
   <div class="text-center text-muted p-4">
-    <p class="mb-0">{% trans "ยังไม่มีคาบเรียน" %} <a href="{% url 'admin:checkin_sessions_session_add' %}">{% trans "สร้างได้ที่ Admin" %}</a></p>
+    <p class="mb-0">{% trans "No sessions yet" %} <a href="{% url 'admin:checkin_sessions_session_add' %}">{% trans "Create one in Admin" %}</a></p>
   </div>
 {% endif %}

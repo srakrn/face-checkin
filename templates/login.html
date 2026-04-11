@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "เข้าสู่ระบบ" %} - SchimudtCHECK{% endblock %}
+{% block title %}{% trans "Log in" %} - SchimudtCHECK{% endblock %}
 
 {% block main_class %}container py-4{% endblock %}
 
@@ -10,24 +10,24 @@
     <div class="col-12 col-sm-10 col-md-8 col-lg-5 col-xl-4">
       <div class="card">
         <div class="card-body p-4 p-md-5">
-          <h1 class="h3 mb-2">{% trans "เข้าสู่ระบบ" %}</h1>
-          <p class="text-muted mb-4">{% trans "เข้าสู่ระบบเพื่อเข้าถึงหน้าจัดการและรายการคาบเรียนที่เปิดอยู่" %}</p>
+          <h1 class="h3 mb-2">{% trans "Log in" %}</h1>
+          <p class="text-muted mb-4">{% trans "Log in to access the management pages and active sessions" %}</p>
 
           <form method="post" class="d-grid gap-3">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next_url }}">
 
             <div>
-              <label class="form-label" for="id_username">{% trans "ชื่อผู้ใช้" %}</label>
+              <label class="form-label" for="id_username">{% trans "Username" %}</label>
               <input class="form-control" id="id_username" name="username" type="text" autocomplete="username" required />
             </div>
 
             <div>
-              <label class="form-label" for="id_password">{% trans "รหัสผ่าน" %}</label>
+              <label class="form-label" for="id_password">{% trans "Password" %}</label>
               <input class="form-control" id="id_password" name="password" type="password" autocomplete="current-password" required />
             </div>
 
-            <button class="btn btn-dark" type="submit">{% trans "เข้าสู่ระบบ" %}</button>
+            <button class="btn btn-dark" type="submit">{% trans "Log in" %}</button>
           </form>
         </div>
       </div>

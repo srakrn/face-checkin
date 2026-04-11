@@ -27,7 +27,7 @@
 <div class="kiosk-container">
   <div class="kiosk-state-panel">
     <div class="kiosk-state-icon">🔍</div>
-    <div class="kiosk-state-title">{% trans "ไม่พบคาบเรียนให้เช็กอิน" %}</div>
+    <div class="kiosk-state-title">{% trans "No check-in session found" %}</div>
   </div>
 </div>
 
@@ -38,7 +38,7 @@
   <p class="kiosk-subtitle">{{ session.course.name }}</p>
   <div class="kiosk-state-panel">
     <div class="kiosk-state-icon">🔒</div>
-    <div class="kiosk-state-title">{% trans "หมดเวลาเช็กอิน" %}</div>
+    <div class="kiosk-state-title">{% trans "Check-in closed" %}</div>
     <div class="kiosk-state-subtitle">
     </div>
   </div>
@@ -72,7 +72,7 @@
   <template x-if="loading">
     <div class="kiosk-loading-overlay">
       <div class="kiosk-spinner"></div>
-      <span x-text="loadingMessage">{% trans "กำลังโหลด…" %}</span>
+      <span x-text="loadingMessage">{% trans "Loading…" %}</span>
     </div>
   </template>
 
@@ -109,14 +109,14 @@
     {# Top-5 matches mini-table #}
     <template x-if="topMatches.length > 0">
       <div class="kiosk-top-matches">
-        <div class="kiosk-top-matches-title">{% trans "รายการหน้าคล้าย" %}</div>
+        <div class="kiosk-top-matches-title">{% trans "Closest Matches" %}</div>
         <table class="kiosk-top-matches-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>{% trans "รหัสประจำตัว" %}</th>
-              <th>{% trans "ชื่อ" %}</th>
-              <th>{% trans "ความคล้าย" %}</th>
+              <th>{% trans "Custom ID" %}</th>
+              <th>{% trans "Name" %}</th>
+              <th>{% trans "Similarity" %}</th>
             </tr>
           </thead>
           <tbody>
@@ -156,8 +156,8 @@
 <script>
 /* Translated strings for Alpine runtime use */
 const KIOSK_I18N = {
-  processing: "{% trans 'กำลังประมวลผล' %}",
-  takePhoto:  "{% trans 'ถ่ายรูป' %}",
+  processing: "{% trans 'Processing' %}",
+  takePhoto:  "{% trans 'Take Photo' %}",
 };
 </script>
 
@@ -210,7 +210,7 @@ function kioskApp(matchUrl, modelPath, sessionId) {
   return {
     // ── state ──────────────────────────────────────────────────────────────
     loading: true,
-    loadingMessage: '{% trans "กำลังโหลดโมเดลจดจำใบหน้า…" %}',
+    loadingMessage: '{% trans "Loading face recognition model…" %}',
     processing: false,
     message: '',
     messageClass: '',
@@ -260,7 +260,7 @@ function kioskApp(matchUrl, modelPath, sessionId) {
     haltUntilClear: false,
 
     /** Human-readable status label shown in the bottom pill. */
-    autoStatusText: '{% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}',
+    autoStatusText: '{% trans "Center your face in the frame, stay still, and look at the camera" %}',
 
     /** CSS modifier class for the bottom pill. */
     autoStatusClass: 'auto-status-ready',
@@ -275,19 +275,19 @@ function kioskApp(matchUrl, modelPath, sessionId) {
       this.haltUntilClear = phase === 'halted' || phase === 'processing';
       switch (phase) {
         case 'locking':
-          this.autoStatusText  = '{% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}';
+          this.autoStatusText  = '{% trans "Center your face in the frame, stay still, and look at the camera" %}';
           this.autoStatusClass = 'auto-status-locking';
           break;
         case 'processing':
-          this.autoStatusText  = '{% trans "กำลังประมวลผล…" %}';
+          this.autoStatusText  = '{% trans "Processing…" %}';
           this.autoStatusClass = 'auto-status-processing';
           break;
         case 'halted':
-          this.autoStatusText  = '{% trans "รอให้ออกจากกล้อง" %}';
+          this.autoStatusText  = '{% trans "Please step away from the camera" %}';
           this.autoStatusClass = 'auto-status-halted';
           break;
         default: // 'ready'
-          this.autoStatusText  = '{% trans "ขยับตัวให้หน้าอยู่ในกรอบภาพ อยู่นิ่งๆ และมองกล้อง" %}';
+          this.autoStatusText  = '{% trans "Center your face in the frame, stay still, and look at the camera" %}';
           this.autoStatusClass = 'auto-status-ready';
           // Clear the result panel only when the kiosk fully resets to ready.
           this.message = '';
@@ -306,7 +306,7 @@ function kioskApp(matchUrl, modelPath, sessionId) {
         await faceapi.nets.faceRecognitionNet.loadFromUri(modelPath);
       } catch (err) {
         this.loading = false;
-        this.showMessage('{% trans "โหลดโมเดลจดจำใบหน้าไม่สำเร็จ" %}: ' + err.message, 'error');
+        this.showMessage('{% trans "Failed to load face recognition model" %}: ' + err.message, 'error');
         return;
       }
 
@@ -326,7 +326,7 @@ function kioskApp(matchUrl, modelPath, sessionId) {
         });
         this._startOverlay();
       } catch (err) {
-        this.showMessage('{% trans "ไม่สามารถเข้าถึงกล้องได้" %}: ' + err.message, 'error');
+        this.showMessage('{% trans "Unable to access the camera" %}: ' + err.message, 'error');
       }
 
       // 3. Poll session state every ~60 s; reload if it changes (e.g. closed)
@@ -602,7 +602,7 @@ function kioskApp(matchUrl, modelPath, sessionId) {
         .withFaceDescriptor();
 
       if (!detection) {
-        this.showMessage('{% trans "ไม่พบใบหน้าในรูป" %}', 'warning');
+        this.showMessage('{% trans "No face detected in the image" %}', 'warning');
         this.processing = false;
         this._setPhase('halted');
         this._clearSince = null;
@@ -631,7 +631,7 @@ function kioskApp(matchUrl, modelPath, sessionId) {
         const data = await resp.json();
 
         if (!resp.ok) {
-          this.showMessage(data.error || '{% trans "เกิดข้อผิดพลาดที่เซิร์ฟเวอร์" %}', 'error');
+          this.showMessage(data.error || '{% trans "Server error" %}', 'error');
           this.topMatches = [];
         } else {
           // Always update top matches from server response
@@ -639,16 +639,16 @@ function kioskApp(matchUrl, modelPath, sessionId) {
 
           if (data.matched) {
             if (data.already_checked_in) {
-              this.showMessage(`${data.face.name} {% trans "เช็กอินไปก่อนหน้านี้แล้ว" %}`, 'warning');
+              this.showMessage(`${data.face.name} {% trans "has already checked in" %}`, 'warning');
             } else {
-              this.showMessage(`✅ ${data.face.name} {% trans "เช็กอินสำเร็จ" %}`, 'success');
+              this.showMessage(`✅ ${data.face.name} {% trans "checked in successfully" %}`, 'success');
             }
           } else {
-            this.showMessage('{% trans "ไม่พบใบหน้าที่ตรงกัน" %}', 'error');
+            this.showMessage('{% trans "No matching face found" %}', 'error');
           }
         }
       } catch (err) {
-        this.showMessage('{% trans "เกิดข้อผิดพลาดของเครือข่าย" %}: ' + err.message, 'error');
+        this.showMessage('{% trans "Network error" %}: ' + err.message, 'error');
         this.topMatches = [];
       }
 

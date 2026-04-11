@@ -5,15 +5,15 @@
     {% if session.state == "active" %}
       <br>
       <a href="/kiosk/{{ session.pk }}/" class="small" target="_blank" rel="noopener">
-        {% trans "เปิดหน้าจอเช็กอิน" %}
+        {% trans "Open Check-in Screen" %}
       </a>
     {% endif %}
   </td>
   <td>
     {% if session.state == "active" %}
-      <span class="badge text-bg-success">{% trans "เปิดให้เช็กอิน" %}</span>
+      <span class="badge text-bg-success">{% trans "Open for Check-in" %}</span>
     {% else %}
-      <span class="badge text-bg-secondary">{% trans "ปิดไม่ให้เช็กอิน" %}</span>
+      <span class="badge text-bg-secondary">{% trans "Closed for Check-in" %}</span>
     {% endif %}
   </td>
   <td>{{ session.scheduled_at|default:"—" }}</td>
@@ -29,7 +29,7 @@
           hx-indicator="#global-indicator"
           hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
         >
-          {% trans "ปิดการเช็กอิน" %}
+          {% trans "Close Check-in" %}
         </button>
       {% else %}
         <button
@@ -40,14 +40,14 @@
           hx-indicator="#global-indicator"
           hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
         >
-          {% trans "เปิดการเช็กอิน" %}
+          {% trans "Open Check-in" %}
         </button>
       {% endif %}
       <a href="{% url 'sessions:report_page' session.pk %}" class="btn btn-outline-secondary btn-sm">
-        {% trans "รายงาน" %}
+        {% trans "Report" %}
       </a>
       <a href="{% url 'admin:checkin_sessions_session_change' session.pk %}" class="btn btn-outline-secondary btn-sm">
-        {% trans "แก้ไข" %}
+        {% trans "Edit" %}
       </a>
     </div>
   </td>

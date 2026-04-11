@@ -38,7 +38,7 @@
           <ul class="navbar-nav ms-auto py-3 py-sm-0">
             {% if request.user.is_authenticated %}
               <li class="nav-item">
-                <a href="{% url 'sessions:index' %}" class="nav-link">{% trans "รายงาน" %}</a>
+                <a href="{% url 'sessions:index' %}" class="nav-link">{% trans "Reports" %}</a>
               </li>
               <li class="nav-item">
                 <a href="{% url 'admin:index' %}" class="nav-link">Admin</a>
@@ -47,13 +47,13 @@
                 <form method="post" action="{% url 'logout' %}" class="m-0">
                   {% csrf_token %}
                   <button type="submit" class="nav-link btn btn-link border-0 w-100 text-start text-decoration-none">
-                    {% trans "ออกจากระบบ" %}
+                    {% trans "Log out" %}
                   </button>
                 </form>
               </li>
             {% else %}
               <li class="nav-item">
-                <a href="{% url 'login' %}" class="nav-link">{% trans "เข้าสู่ระบบ" %}</a>
+                <a href="{% url 'login' %}" class="nav-link">{% trans "Log in" %}</a>
               </li>
             {% endif %}
           </ul>

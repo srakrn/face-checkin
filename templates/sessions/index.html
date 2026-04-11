@@ -1,11 +1,11 @@
 {% extends "sessions/base.html" %}
 {% load static i18n %}
 
-{% block title %}{% trans "รายวิชาทั้งหมด" %} - SchimudtCHECK{% endblock %}
+{% block title %}{% trans "All Courses" %} - SchimudtCHECK{% endblock %}
 
 {% block content %}
   <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">{% trans "รายวิชาทั้งหมด" %}</h1>
+    <h1 class="h3 mb-0">{% trans "All Courses" %}</h1>
   </div>
 
   {% if all_courses %}
@@ -17,8 +17,8 @@
               <div class="card-body">
                 <h5 class="card-title">{{ course.name }}</h5>
                 <p class="card-text text-muted small">
-                  {% blocktrans with count=course.sessions.count %}{{ count }} คาบเรียน{% endblocktrans %}
-                  &nbsp;·&nbsp; {% trans "กลุ่มใบหน้า" %}: {{ course.face_group.name }}
+                  {% blocktrans with count=course.sessions.count %}{{ count }} sessions{% endblocktrans %}
+                  &nbsp;·&nbsp; {% trans "Face Group" %}: {{ course.face_group.name }}
                 </p>
               </div>
             </div>
@@ -29,7 +29,7 @@
   {% else %}
     <div class="card">
       <div class="card-body text-center text-muted py-5">
-        <p class="mb-0">{% trans "ยังไม่มีวิชา" %} <a href="{% url 'admin:classes_course_add' %}">{% trans "สร้างได้ที่ Admin" %}</a></p>
+        <p class="mb-0">{% trans "No courses yet" %} <a href="{% url 'admin:classes_course_add' %}">{% trans "Create one in Admin" %}</a></p>
       </div>
     </div>
   {% endif %}

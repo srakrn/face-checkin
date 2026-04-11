@@ -3,6 +3,7 @@ Session views — API endpoints + HTMX-powered management UI.
 """
 
 import csv
+from datetime import datetime
 
 from apps.checkin.anomaly import detect_anomalies
 from apps.checkin.models import CheckIn
@@ -15,6 +16,7 @@ from django.http import FileResponse
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from django.views.decorators.http import require_GET, require_POST
 
@@ -168,7 +170,7 @@ def session_report_page(request, pk: int):
     unique_only = request.GET.get("unique") == "1"
     all_checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
     checkins = _deduplicate_checkins(all_checkins) if unique_only else all_checkins
-    face_options = list(session.course.face_group.faces.order_by("name", "custom_id"))
+    face_options = list(session.course.face_group.faces.order_by("custom_id", "name"))
     matched_count = sum(1 for c in checkins if c.matched)
     unmatched_count = len(checkins) - matched_count
     anomalies = detect_anomalies(checkins)
@@ -258,6 +260,43 @@ def checkin_remap(request, pk: int):
 
     messages.success(request, _('Check-in remapped to "%(name)s".') % {"name": face.name})
     return redirect(_report_page_url(checkin.session_id, unique_only))
+
+
+@login_required
+@require_POST
+def checkin_manual(request, pk: int):
+    """POST /sessions/<pk>/checkins/manual/ — create a manual check-in for a participant."""
+    session = get_object_or_404(_accessible_sessions(request.user), pk=pk)
+    unique_only = request.POST.get("unique") == "1"
+    face_id = request.POST.get("face_id")
+    checked_in_at_str = request.POST.get("checked_in_at")
+
+    if not face_id:
+        messages.error(request, _("Please choose a participant."))
+        return redirect(_report_page_url(pk, unique_only))
+
+    face = get_object_or_404(
+        Face,
+        pk=face_id,
+        face_group=session.course.face_group,
+    )
+
+    if checked_in_at_str:
+        try:
+            checked_in_at = datetime.fromisoformat(checked_in_at_str)
+            if timezone.is_naive(checked_in_at):
+                checked_in_at = timezone.make_aware(checked_in_at)
+        except ValueError:
+            checked_in_at = timezone.now()
+    else:
+        checked_in_at = timezone.now()
+
+    checkin = CheckIn.objects.create(session=session, face=face, matched=True)
+    # auto_now_add prevents passing checked_in_at at creation time; update it directly.
+    CheckIn.objects.filter(pk=checkin.pk).update(checked_in_at=checked_in_at)
+
+    messages.success(request, _('Manual check-in created for "%(name)s".') % {"name": face.name})
+    return redirect(_report_page_url(pk, unique_only))
 
 
 @login_required

@@ -1,12 +1,12 @@
 {% extends "sessions/base.html" %}
 {% load static i18n %}
 
-{% block title %}{{ course.name }} — {% trans "คาบเรียน" %} — SchimudtCHECK{% endblock %}
+{% block title %}{{ course.name }} — {% trans "Sessions" %} — SchimudtCHECK{% endblock %}
 
 {% block content %}
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="{% url 'sessions:index' %}">{% trans "รายวิชาทั้งหมด" %}</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'sessions:index' %}">{% trans "All Courses" %}</a></li>
       <li class="breadcrumb-item active" aria-current="page">{{ course.name }}</li>
     </ol>
   </nav>
@@ -14,11 +14,11 @@
   <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
       <h1 class="h3 mb-1">{{ course.name }}</h1>
-      <div class="text-muted small">{% trans "กลุ่มใบหน้า" %}: {{ course.face_group.name }}</div>
+      <div class="text-muted small">{% trans "Face Group" %}: {{ course.face_group.name }}</div>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-      <a href="{% url 'admin:checkin_sessions_session_add' %}" class="btn btn-primary btn-sm">+ {% trans "คาบเรียนใหม่" %}</a>
-      <a href="{% url 'sessions:index' %}" class="btn btn-outline-secondary btn-sm">{% trans "รายวิชาทั้งหมด" %}</a>
+      <a href="{% url 'admin:checkin_sessions_session_add' %}" class="btn btn-primary btn-sm">+ {% trans "New Session" %}</a>
+      <a href="{% url 'sessions:index' %}" class="btn btn-outline-secondary btn-sm">{% trans "All Courses" %}</a>
     </div>
   </div>
 

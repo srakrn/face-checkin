@@ -17,6 +17,7 @@ urlpatterns = [
     path("sessions/checkins/<int:pk>/image/", views.checkin_image, name="checkin_image"),
     path("sessions/checkins/<int:pk>/remap/", views.checkin_remap, name="checkin_remap"),
     path("sessions/checkins/<int:pk>/delete/", views.checkin_delete, name="checkin_delete"),
+    path("sessions/<int:pk>/checkins/manual/", views.checkin_manual, name="checkin_manual"),
     path("sessions/<int:pk>/open/", views.session_open, name="open"),
     path("sessions/<int:pk>/close/", views.session_close, name="close"),
     path("sessions/<int:pk>/report/", views.session_report_page, name="report_page"),
