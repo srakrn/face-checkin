@@ -3,6 +3,39 @@
 
 {% block title %}{{ course.name }} — {% trans "Sessions" %} — SchimudtCHECK{% endblock %}
 
+{% block extra_head %}
+  {{ block.super }}
+  <style>
+    .toolbar-card {
+      border: 1px solid var(--bs-border-color);
+      border-radius: 1rem;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .sort-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: inherit;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .sort-link:hover {
+      color: var(--bs-primary);
+    }
+
+    .sort-link-active {
+      color: var(--bs-primary);
+    }
+
+    .sort-indicator {
+      font-size: 0.8rem;
+      opacity: 0.75;
+    }
+  </style>
+{% endblock %}
+
 {% block content %}
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb">
@@ -19,6 +52,39 @@
     <div class="d-flex gap-2 flex-wrap">
       <a href="{% url 'admin:checkin_sessions_session_add' %}" class="btn btn-primary btn-sm">+ {% trans "New Session" %}</a>
       <a href="{% url 'sessions:index' %}" class="btn btn-outline-secondary btn-sm">{% trans "All Courses" %}</a>
+    </div>
+  </div>
+
+  <div class="card mb-4 toolbar-card shadow-sm">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-12 col-md-7">
+          <label for="sessionSearch" class="form-label">{% trans "Search Sessions" %}</label>
+          <input
+            type="search"
+            id="sessionSearch"
+            name="q"
+            class="form-control"
+            value="{{ filters.q }}"
+            placeholder="{% trans 'Search by session name' %}"
+          >
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+          <label for="sessionState" class="form-label">{% trans "Status" %}</label>
+          <select id="sessionState" name="state" class="form-select">
+            <option value="all"{% if filters.state == "all" %} selected{% endif %}>{% trans "All Statuses" %}</option>
+            <option value="active"{% if filters.state == "active" %} selected{% endif %}>{% trans "Open for Check-in" %}</option>
+            <option value="closed"{% if filters.state == "closed" %} selected{% endif %}>{% trans "Closed for Check-in" %}</option>
+          </select>
+        </div>
+        {% if filters.sort != "default" %}
+          <input type="hidden" name="sort" value="{{ filters.sort }}">
+        {% endif %}
+        <div class="col-12 col-sm-6 col-md-2 d-flex gap-2 flex-wrap">
+          <button type="submit" class="btn btn-primary btn-sm">{% trans "Apply" %}</button>
+          <a href="{% url 'sessions:course_session_list' course.pk %}" class="btn btn-outline-secondary btn-sm">{% trans "Reset" %}</a>
+        </div>
+      </form>
     </div>
   </div>
 

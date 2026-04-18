@@ -4,10 +4,34 @@
     <table class="table table-hover align-middle mb-0">
       <thead class="table-light">
         <tr>
-          <th>{% trans "Session Name" %}</th>
+          <th>
+            <a
+              href="{% url 'sessions:course_session_list' course.pk %}{% if session_sort_links.name.query %}?{{ session_sort_links.name.query }}{% endif %}"
+              class="sort-link{% if session_sort_links.name.active %} sort-link-active{% endif %}"
+            >
+              <span>{% trans "Session Name" %}</span>
+              <span class="sort-indicator" aria-hidden="true">{{ session_sort_links.name.indicator }}</span>
+            </a>
+          </th>
           <th>{% trans "Status" %}</th>
-          <th>{% trans "Start Time" %}</th>
-          <th>{% trans "Auto-close At" %}</th>
+          <th>
+            <a
+              href="{% url 'sessions:course_session_list' course.pk %}{% if session_sort_links.scheduled.query %}?{{ session_sort_links.scheduled.query }}{% endif %}"
+              class="sort-link{% if session_sort_links.scheduled.active %} sort-link-active{% endif %}"
+            >
+              <span>{% trans "Start Time" %}</span>
+              <span class="sort-indicator" aria-hidden="true">{{ session_sort_links.scheduled.indicator }}</span>
+            </a>
+          </th>
+          <th>
+            <a
+              href="{% url 'sessions:course_session_list' course.pk %}{% if session_sort_links.auto_close.query %}?{{ session_sort_links.auto_close.query }}{% endif %}"
+              class="sort-link{% if session_sort_links.auto_close.active %} sort-link-active{% endif %}"
+            >
+              <span>{% trans "Auto-close At" %}</span>
+              <span class="sort-indicator" aria-hidden="true">{{ session_sort_links.auto_close.indicator }}</span>
+            </a>
+          </th>
           <th>{% trans "Actions" %}</th>
         </tr>
       </thead>
@@ -20,6 +44,10 @@
   </div>
 {% else %}
   <div class="text-center text-muted p-4">
-    <p class="mb-0">{% trans "No sessions yet" %} <a href="{% url 'admin:checkin_sessions_session_add' %}">{% trans "Create one in Admin" %}</a></p>
+    {% if has_active_filters %}
+      <p class="mb-0">{% trans "No sessions match these filters." %}</p>
+    {% else %}
+      <p class="mb-0">{% trans "No sessions yet" %} <a href="{% url 'admin:checkin_sessions_session_add' %}">{% trans "Create one in Admin" %}</a></p>
+    {% endif %}
   </div>
 {% endif %}

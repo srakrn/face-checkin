@@ -7,12 +7,15 @@ Covers:
 """
 
 import io
+from datetime import timedelta
 
 import numpy as np
 import pytest
 from django.contrib.auth import get_user_model
 from django.test import Client
 from django.template.loader import render_to_string
+from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import override
 from PIL import Image
 
@@ -42,6 +45,19 @@ def _fake_image(name: str = "face.jpg") -> io.BytesIO:
     buf.name = name
     buf.seek(0)
     return buf
+
+
+def _create_checkin(session, *, face=None, matched=False, ip_address=None, user_agent=""):
+    checkin = CheckIn(
+        session=session,
+        face=face,
+        matched=matched,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+    checkin.raw_face_image.save("test.jpg", _fake_image(), save=False)
+    checkin.save()
+    return checkin
 
 
 # ---------------------------------------------------------------------------
@@ -417,6 +433,278 @@ class TestSessionStateMutationViews:
 
         assert response.status_code == 302
         assert response["Location"] == "/courses/"
+
+
+@pytest.mark.django_db
+class TestSessionManagementFilters:
+    def test_session_list_search_filters_by_partial_name(self, client, staff_user, course):
+        client.force_login(staff_user)
+        target = Session.objects.create(course=course, name="Physics Lab")
+        Session.objects.create(course=course, name="Chemistry Review")
+
+        response = client.get(f"/courses/{course.pk}/sessions/", {"q": "phys"})
+
+        sessions = list(response.context["sessions"])
+        assert response.status_code == 200
+        assert sessions == [target]
+
+    def test_session_list_filters_by_active_status(self, client, staff_user, course):
+        client.force_login(staff_user)
+        active = Session.objects.create(course=course, name="Open Session")
+        closed = Session.objects.create(course=course, name="Closed Session")
+        closed.close()
+
+        response = client.get(f"/courses/{course.pk}/sessions/", {"state": "active"})
+
+        sessions = list(response.context["sessions"])
+        assert response.status_code == 200
+        assert active in sessions
+        assert closed not in sessions
+
+    def test_session_list_filters_by_closed_status(self, client, staff_user, course):
+        client.force_login(staff_user)
+        active = Session.objects.create(course=course, name="Open Session")
+        closed = Session.objects.create(course=course, name="Closed Session")
+        closed.close()
+
+        response = client.get(f"/courses/{course.pk}/sessions/", {"state": "closed"})
+
+        sessions = list(response.context["sessions"])
+        assert response.status_code == 200
+        assert closed in sessions
+        assert active not in sessions
+
+    def test_session_list_can_sort_by_name(self, client, staff_user, course):
+        client.force_login(staff_user)
+        session_b = Session.objects.create(course=course, name="Beta Session")
+        session_a = Session.objects.create(course=course, name="Alpha Session")
+
+        response = client.get(f"/courses/{course.pk}/sessions/", {"sort": "name_asc"})
+
+        sessions = list(response.context["sessions"][:2])
+        assert response.status_code == 200
+        assert sessions == [session_a, session_b]
+
+    def test_session_list_can_sort_by_scheduled_at(self, client, staff_user, course):
+        client.force_login(staff_user)
+        later = Session.objects.create(
+            course=course,
+            name="Later Session",
+            scheduled_at=timezone.now() + timedelta(days=1),
+        )
+        earlier = Session.objects.create(
+            course=course,
+            name="Earlier Session",
+            scheduled_at=timezone.now() - timedelta(days=1),
+        )
+
+        response = client.get(f"/courses/{course.pk}/sessions/", {"sort": "scheduled_asc"})
+
+        sessions = list(response.context["sessions"][:2])
+        assert response.status_code == 200
+        assert sessions == [earlier, later]
+
+    def test_report_search_filters_by_participant_name(
+        self, client, staff_user, active_session, enrolled_face, second_enrolled_face
+    ):
+        client.force_login(staff_user)
+        alpha = _create_checkin(active_session, face=enrolled_face, matched=True)
+        beta = _create_checkin(active_session, face=second_enrolled_face, matched=True)
+
+        response = client.get(f"/sessions/{active_session.pk}/report/", {"q": "ali"})
+
+        checkins = list(response.context["checkins"])
+        assert response.status_code == 200
+        assert checkins == [alpha]
+        assert beta not in checkins
+
+    def test_report_search_filters_by_custom_id(
+        self, client, staff_user, active_session, enrolled_face, second_enrolled_face
+    ):
+        client.force_login(staff_user)
+        alpha = _create_checkin(active_session, face=enrolled_face, matched=True)
+        _create_checkin(active_session, face=second_enrolled_face, matched=True)
+
+        response = client.get(f"/sessions/{active_session.pk}/report/", {"q": "alice-001"})
+
+        checkins = list(response.context["checkins"])
+        assert response.status_code == 200
+        assert checkins == [alpha]
+
+    def test_report_filters_by_matched_status(
+        self, client, staff_user, active_session, enrolled_face, checkin_unmatched
+    ):
+        client.force_login(staff_user)
+        matched = _create_checkin(active_session, face=enrolled_face, matched=True)
+
+        response = client.get(f"/sessions/{active_session.pk}/report/", {"matched": "matched"})
+
+        checkins = list(response.context["checkins"])
+        assert response.status_code == 200
+        assert checkins == [matched]
+        assert checkin_unmatched not in checkins
+
+    def test_report_filters_by_unmatched_status(
+        self, client, staff_user, active_session, enrolled_face, checkin_unmatched
+    ):
+        client.force_login(staff_user)
+        _create_checkin(active_session, face=enrolled_face, matched=True)
+
+        response = client.get(f"/sessions/{active_session.pk}/report/", {"matched": "unmatched"})
+
+        checkins = list(response.context["checkins"])
+        assert response.status_code == 200
+        assert checkins == [checkin_unmatched]
+
+    def test_report_filters_by_suspicious_only(
+        self, client, staff_user, active_session, enrolled_face, second_enrolled_face
+    ):
+        client.force_login(staff_user)
+        normal = _create_checkin(
+            active_session,
+            face=enrolled_face,
+            matched=True,
+            ip_address="10.0.0.1",
+            user_agent="kiosk-browser",
+        )
+        _create_checkin(
+            active_session,
+            face=second_enrolled_face,
+            matched=True,
+            ip_address="10.0.0.1",
+            user_agent="kiosk-browser",
+        )
+        suspicious = _create_checkin(
+            active_session,
+            face=None,
+            matched=False,
+            ip_address="10.0.0.2",
+            user_agent="rogue-browser",
+        )
+
+        response = client.get(f"/sessions/{active_session.pk}/report/", {"anomaly": "suspicious_only"})
+
+        checkins = list(response.context["checkins"])
+        assert response.status_code == 200
+        assert suspicious in checkins
+        assert normal not in checkins
+
+    def test_report_filters_by_normal_only(
+        self, client, staff_user, active_session, enrolled_face, second_enrolled_face
+    ):
+        client.force_login(staff_user)
+        normal = _create_checkin(
+            active_session,
+            face=enrolled_face,
+            matched=True,
+            ip_address="10.0.0.1",
+            user_agent="kiosk-browser",
+        )
+        _create_checkin(
+            active_session,
+            face=second_enrolled_face,
+            matched=True,
+            ip_address="10.0.0.1",
+            user_agent="kiosk-browser",
+        )
+        _create_checkin(
+            active_session,
+            face=None,
+            matched=False,
+            ip_address="10.0.0.2",
+            user_agent="rogue-browser",
+        )
+
+        response = client.get(f"/sessions/{active_session.pk}/report/", {"anomaly": "normal_only"})
+
+        checkins = list(response.context["checkins"])
+        assert response.status_code == 200
+        assert normal in checkins
+        assert all(not checkin.anomaly_reasons for checkin in checkins)
+
+    def test_report_can_sort_by_time_desc(
+        self, client, staff_user, active_session, enrolled_face, second_enrolled_face
+    ):
+        client.force_login(staff_user)
+        first = _create_checkin(active_session, face=enrolled_face, matched=True)
+        second = _create_checkin(active_session, face=second_enrolled_face, matched=True)
+        CheckIn.objects.filter(pk=first.pk).update(checked_in_at=timezone.now() - timedelta(hours=1))
+        CheckIn.objects.filter(pk=second.pk).update(checked_in_at=timezone.now())
+        first.refresh_from_db()
+        second.refresh_from_db()
+
+        response = client.get(f"/sessions/{active_session.pk}/report/", {"sort": "time_desc"})
+
+        checkins = list(response.context["checkins"][:2])
+        assert response.status_code == 200
+        assert checkins == [second, first]
+
+    def test_report_can_sort_by_name_asc(
+        self, client, staff_user, active_session, enrolled_face, second_enrolled_face
+    ):
+        client.force_login(staff_user)
+        beta = _create_checkin(active_session, face=second_enrolled_face, matched=True)
+        alpha = _create_checkin(active_session, face=enrolled_face, matched=True)
+
+        response = client.get(f"/sessions/{active_session.pk}/report/", {"sort": "name_asc"})
+
+        checkins = list(response.context["checkins"][:2])
+        assert response.status_code == 200
+        assert checkins == [alpha, beta]
+
+    def test_report_unique_mode_combines_with_search_filters(
+        self, client, staff_user, active_session, enrolled_face, second_enrolled_face
+    ):
+        client.force_login(staff_user)
+        first = _create_checkin(active_session, face=enrolled_face, matched=True)
+        second = _create_checkin(active_session, face=enrolled_face, matched=True)
+        other = _create_checkin(active_session, face=second_enrolled_face, matched=True)
+        CheckIn.objects.filter(pk=first.pk).update(checked_in_at=timezone.now() - timedelta(hours=2))
+        CheckIn.objects.filter(pk=second.pk).update(checked_in_at=timezone.now() - timedelta(hours=1))
+        first.refresh_from_db()
+        second.refresh_from_db()
+        other.refresh_from_db()
+
+        response = client.get(
+            f"/sessions/{active_session.pk}/report/",
+            {"unique": "1", "q": "alice", "sort": "time_desc"},
+        )
+
+        checkins = list(response.context["checkins"])
+        assert response.status_code == 200
+        assert checkins == [first]
+        assert second not in checkins
+        assert other not in checkins
+
+    def test_report_renders_inline_custom_id_without_separate_column(
+        self, client, staff_user, active_session, enrolled_face
+    ):
+        client.force_login(staff_user)
+        _create_checkin(active_session, face=enrolled_face, matched=True)
+
+        response = client.get(f"/sessions/{active_session.pk}/report/")
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert "Alice (<code>alice-001</code>)" in content
+        assert "<th>Custom ID</th>" not in content
+
+    def test_report_links_preserve_unique_filter_state(
+        self, client, staff_user, active_session, enrolled_face
+    ):
+        client.force_login(staff_user)
+        _create_checkin(active_session, face=enrolled_face, matched=True)
+
+        response = client.get(
+            f"/sessions/{active_session.pk}/report/",
+            {"unique": "1", "q": "alice", "matched": "matched", "sort": "name_asc"},
+        )
+
+        content = response.content.decode()
+        assert response.status_code == 200
+        assert f'{reverse("sessions:report_csv", args=[active_session.pk])}?unique=1&amp;q=alice&amp;matched=matched&amp;sort=name_asc' in content
+        assert f'{reverse("sessions:report_page", args=[active_session.pk])}?q=alice&amp;matched=matched&amp;sort=name_asc' in content
+        assert 'name="unique" value="1"' in content
 
     def test_login_shows_error_for_invalid_credentials(self, client):
         response = client.post(

@@ -279,6 +279,10 @@ msgstr "การดำเนินการ"
 msgid "No sessions yet"
 msgstr "ยังไม่มีคาบเรียน"
 
+#: templates/sessions/partials/session_table.html:48
+msgid "No sessions match these filters."
+msgstr "ไม่พบคาบเรียนที่ตรงกับตัวกรองนี้"
+
 #: templates/sessions/report.html:201
 msgid "Course"
 msgstr "วิชา"
@@ -400,6 +404,10 @@ msgstr "บันทึก"
 msgid "No check-ins yet"
 msgstr "ยังไม่มีการเช็กอิน"
 
+#: templates/sessions/report.html:516
+msgid "No check-ins match these filters."
+msgstr "ไม่พบรายการเช็กอินที่ตรงกับตัวกรองนี้"
+
 #: templates/sessions/report.html:434
 msgid "Report generated at"
 msgstr "วันที่และเวลาที่ออกรายงาน"
@@ -423,3 +431,43 @@ msgstr "คาบเรียน"
 #: templates/sessions/session_list.html:20
 msgid "New Session"
 msgstr "คาบเรียนใหม่"
+
+#: templates/sessions/session_list.html:62
+msgid "Search Sessions"
+msgstr "ค้นหาคาบเรียน"
+
+#: templates/sessions/session_list.html:69
+msgid "Search by session name"
+msgstr "ค้นหาด้วยชื่อคาบเรียน"
+
+#: templates/sessions/session_list.html:75
+msgid "All Statuses"
+msgstr "ทุกสถานะ"
+
+#: templates/sessions/report.html:267
+msgid "Search Participants"
+msgstr "ค้นหาผู้เข้าร่วม"
+
+#: templates/sessions/report.html:274
+msgid "Search by name or custom ID"
+msgstr "ค้นหาด้วยชื่อหรือรหัสประจำตัว"
+
+#: templates/sessions/report.html:280
+msgid "All Check-ins"
+msgstr "การเช็กอินทั้งหมด"
+
+#: templates/sessions/report.html:281
+msgid "Matched Only"
+msgstr "เฉพาะที่เทียบใบหน้าได้"
+
+#: templates/sessions/report.html:282
+msgid "Unmatched Only"
+msgstr "เฉพาะที่เทียบใบหน้าไม่ได้"
+
+#: templates/sessions/report.html:289
+msgid "Suspicious Only"
+msgstr "เฉพาะรายการต้องสงสัย"
+
+#: templates/sessions/report.html:290
+msgid "Normal Only"
+msgstr "เฉพาะรายการปกติ"

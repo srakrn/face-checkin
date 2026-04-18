@@ -4,6 +4,7 @@ Session views — API endpoints + HTMX-powered management UI.
 
 import csv
 from datetime import datetime
+from urllib.parse import urlencode
 
 from apps.checkin.anomaly import detect_anomalies
 from apps.checkin.models import CheckIn
@@ -42,6 +43,159 @@ def _accessible_checkins(user):
     if user.is_superuser:
         return queryset
     return queryset.filter(session__course__in=Course.objects.accessible_to(user)).distinct()
+
+
+SESSION_SORT_OPTIONS = {
+    "default": None,
+    "name_asc": ["name", "pk"],
+    "name_desc": ["-name", "-pk"],
+    "scheduled_asc": ["scheduled_at", "pk"],
+    "scheduled_desc": ["-scheduled_at", "-pk"],
+    "auto_close_asc": ["auto_close_at", "pk"],
+    "auto_close_desc": ["-auto_close_at", "-pk"],
+    "created_asc": ["created_at", "pk"],
+    "created_desc": ["-created_at", "-pk"],
+}
+
+REPORT_SORT_OPTIONS = {
+    "default": "default",
+    "time_asc": "default",
+    "time_desc": "time_desc",
+    "name_asc": "name_asc",
+    "name_desc": "name_desc",
+}
+
+
+def _clean_query_value(value: str | None) -> str:
+    return (value or "").strip()
+
+
+def _query_string(params: dict[str, str]) -> str:
+    filtered = {key: value for key, value in params.items() if value not in ("", None, "all", "default")}
+    return urlencode(filtered)
+
+
+def _sort_meta(current_sort: str, asc_value: str, desc_value: str) -> dict[str, str | bool]:
+    if current_sort == asc_value:
+        return {"active": True, "descending": False, "indicator": "↑", "next": desc_value}
+    if current_sort == desc_value:
+        return {"active": True, "descending": True, "indicator": "↓", "next": asc_value}
+    return {"active": False, "descending": False, "indicator": "↕", "next": asc_value}
+
+
+def _session_list_filters(request):
+    q = _clean_query_value(request.GET.get("q"))
+    state = request.GET.get("state", "all")
+    sort = request.GET.get("sort", "default")
+
+    if state not in {"all", Session.State.ACTIVE, Session.State.CLOSED}:
+        state = "all"
+    if sort not in SESSION_SORT_OPTIONS:
+        sort = "default"
+
+    return {"q": q, "state": state, "sort": sort}
+
+
+def _report_filters(request):
+    q = _clean_query_value(request.GET.get("q"))
+    matched = request.GET.get("matched", "all")
+    anomaly = request.GET.get("anomaly", "all")
+    sort = request.GET.get("sort", "default")
+    unique_only = request.GET.get("unique") == "1"
+
+    if matched not in {"all", "matched", "unmatched"}:
+        matched = "all"
+    if anomaly not in {"all", "suspicious_only", "normal_only"}:
+        anomaly = "all"
+    if sort not in REPORT_SORT_OPTIONS:
+        sort = "default"
+
+    return {
+        "q": q,
+        "matched": matched,
+        "anomaly": anomaly,
+        "sort": sort,
+        "unique": "1" if unique_only else "",
+        "unique_only": unique_only,
+    }
+
+
+def _apply_session_list_filters(sessions, filters):
+    if filters["q"]:
+        sessions = sessions.filter(name__icontains=filters["q"])
+    if filters["state"] != "all":
+        sessions = sessions.filter(state=filters["state"])
+
+    order_by = SESSION_SORT_OPTIONS[filters["sort"]]
+    if order_by:
+        sessions = sessions.order_by(*order_by)
+    return sessions
+
+
+def _apply_report_filters(checkins, anomalies, filters):
+    if filters["q"]:
+        query = filters["q"]
+        checkins = [
+            checkin
+            for checkin in checkins
+            if checkin.face
+            and (
+                query.casefold() in (checkin.face.name or "").casefold()
+                or query.casefold() in (checkin.face.custom_id or "").casefold()
+            )
+        ]
+
+    if filters["matched"] == "matched":
+        checkins = [checkin for checkin in checkins if checkin.matched]
+    elif filters["matched"] == "unmatched":
+        checkins = [checkin for checkin in checkins if not checkin.matched]
+
+    if filters["anomaly"] == "suspicious_only":
+        checkins = [checkin for checkin in checkins if anomalies.get(checkin.pk)]
+    elif filters["anomaly"] == "normal_only":
+        checkins = [checkin for checkin in checkins if not anomalies.get(checkin.pk)]
+
+    if filters["sort"] == "time_desc":
+        checkins = sorted(checkins, key=lambda checkin: (checkin.checked_in_at, checkin.pk), reverse=True)
+    elif filters["sort"] == "name_asc":
+        checkins = sorted(
+            checkins,
+            key=lambda checkin: (
+                checkin.face is None,
+                (checkin.face.name or "").casefold() if checkin.face else "",
+                checkin.pk,
+            ),
+        )
+    elif filters["sort"] == "name_desc":
+        checkins = sorted(
+            checkins,
+            key=lambda checkin: (
+                checkin.face is not None,
+                (checkin.face.name or "").casefold() if checkin.face else "",
+                checkin.pk,
+            ),
+            reverse=True,
+        )
+
+    return checkins
+
+
+def _report_query_params(filters: dict[str, str]) -> dict[str, str]:
+    return {
+        "unique": filters.get("unique", ""),
+        "q": filters.get("q", ""),
+        "matched": filters.get("matched", "all"),
+        "anomaly": filters.get("anomaly", "all"),
+        "sort": filters.get("sort", "default"),
+    }
+
+
+def _session_list_query_params(filters: dict[str, str]) -> dict[str, str]:
+    return {
+        "q": filters.get("q", ""),
+        "state": filters.get("state", "all"),
+        "sort": filters.get("sort", "default"),
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -95,8 +249,20 @@ def session_report(request, pk: int):
 def course_session_list(request, course_pk: int):
     """GET /courses/<course_pk>/sessions/ — list all sessions for a course."""
     course = get_object_or_404(_accessible_classes(request.user), pk=course_pk)
-    sessions = course.sessions.all()
+    filters = _session_list_filters(request)
+    sessions = _apply_session_list_filters(course.sessions.all(), filters)
     all_courses = _accessible_classes(request.user).order_by("name")
+    session_sort_links = {}
+    for key, asc_value, desc_value in (
+        ("name", "name_asc", "name_desc"),
+        ("scheduled", "scheduled_asc", "scheduled_desc"),
+        ("auto_close", "auto_close_asc", "auto_close_desc"),
+    ):
+        meta = _sort_meta(filters["sort"], asc_value, desc_value)
+        session_sort_links[key] = {
+            **meta,
+            "query": _query_string({**_session_list_query_params(filters), "sort": meta["next"]}),
+        }
     return render(
         request,
         "sessions/session_list.html",
@@ -104,6 +270,9 @@ def course_session_list(request, course_pk: int):
             "course": course,
             "sessions": sessions,
             "all_courses": all_courses,
+            "filters": filters,
+            "has_active_filters": any(value not in ("", "all", "default") for value in filters.values()),
+            "session_sort_links": session_sort_links,
         },
     )
 
@@ -163,21 +332,44 @@ def _report_page_url(session_pk: int, unique_only: bool) -> str:
     return url
 
 
+def _report_page_url_with_filters(session_pk: int, filters: dict[str, str]) -> str:
+    url = reverse("sessions:report_page", args=[session_pk])
+    query = _query_string(_report_query_params(filters))
+    if not query:
+        return url
+    return f"{url}?{query}"
+
+
 @login_required
 def session_report_page(request, pk: int):
     """GET /sessions/<pk>/report/ — HTML report page for a session."""
     session = get_object_or_404(_accessible_sessions(request.user), pk=pk)
-    unique_only = request.GET.get("unique") == "1"
+    filters = _report_filters(request)
+    unique_only = filters["unique_only"]
     all_checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
-    checkins = _deduplicate_checkins(all_checkins) if unique_only else all_checkins
+    checkins = _deduplicate_checkins(all_checkins) if unique_only else list(all_checkins)
     face_options = list(session.course.face_group.faces.order_by("custom_id", "name"))
+    anomalies = detect_anomalies(checkins)
+    checkins = _apply_report_filters(checkins, anomalies, filters)
     matched_count = sum(1 for c in checkins if c.matched)
     unmatched_count = len(checkins) - matched_count
-    anomalies = detect_anomalies(checkins)
-    anomaly_count = sum(1 for reasons in anomalies.values() if reasons)
+    anomaly_count = sum(1 for c in checkins if anomalies.get(c.pk))
     # Annotate each checkin with its anomaly reasons for easy template access
     for c in checkins:
         c.anomaly_reasons = anomalies.get(c.pk, [])
+
+    current_report_query = _query_string(_report_query_params(filters))
+    toggle_unique_filters = {**filters, "unique": "" if unique_only else "1"}
+    report_sort_links = {}
+    for key, asc_value, desc_value in (
+        ("name", "name_asc", "name_desc"),
+        ("time", "default", "time_desc"),
+    ):
+        meta = _sort_meta(filters["sort"], asc_value, desc_value)
+        report_sort_links[key] = {
+            **meta,
+            "query": _query_string({**_report_query_params(filters), "sort": meta["next"]}),
+        }
     return render(
         request,
         "sessions/report.html",
@@ -190,6 +382,16 @@ def session_report_page(request, pk: int):
             "unique_only": unique_only,
             "total_checkin_count": len(all_checkins),
             "face_options": face_options,
+            "filters": filters,
+            "has_active_filters": any(
+                filters[key] not in ("", "all", "default")
+                for key in ("q", "matched", "anomaly", "sort")
+            ),
+            "report_csv_query": current_report_query,
+            "toggle_unique_query": _query_string(_report_query_params(toggle_unique_filters)),
+            "reset_report_query": _query_string({"unique": filters["unique"]}),
+            "report_action_params": _report_query_params(filters),
+            "report_sort_links": report_sort_links,
         },
     )
 
@@ -198,10 +400,12 @@ def session_report_page(request, pk: int):
 def session_report_csv(request, pk: int):
     """GET /sessions/<pk>/report/csv/ — download check-in report as CSV."""
     session = get_object_or_404(_accessible_sessions(request.user), pk=pk)
-    unique_only = request.GET.get("unique") == "1"
+    filters = _report_filters(request)
+    unique_only = filters["unique_only"]
     all_checkins = list(session.checkins.select_related("face").order_by("checked_in_at"))
-    checkins = _deduplicate_checkins(all_checkins) if unique_only else all_checkins
+    checkins = _deduplicate_checkins(all_checkins) if unique_only else list(all_checkins)
     anomalies = detect_anomalies(checkins)
+    checkins = _apply_report_filters(checkins, anomalies, filters)
 
     response = HttpResponse(content_type="text/csv")
     filename = f"session_{session.pk}_report.csv"
@@ -241,12 +445,12 @@ def checkin_image(request, pk: int):
 def checkin_remap(request, pk: int):
     """POST /sessions/checkins/<pk>/remap/ — remap a check-in to a face in the session face group."""
     checkin = get_object_or_404(_accessible_checkins(request.user), pk=pk)
-    unique_only = request.POST.get("unique") == "1"
+    filters = _report_query_params(request.POST)
     face_id = request.POST.get("face_id")
 
     if not face_id:
         messages.error(request, _("Please choose a participant."))
-        return redirect(_report_page_url(checkin.session_id, unique_only))
+        return redirect(_report_page_url_with_filters(checkin.session_id, filters))
 
     face = get_object_or_404(
         Face,
@@ -259,7 +463,7 @@ def checkin_remap(request, pk: int):
     checkin.save(update_fields=["face", "matched"])
 
     messages.success(request, _('Check-in remapped to "%(name)s".') % {"name": face.name})
-    return redirect(_report_page_url(checkin.session_id, unique_only))
+    return redirect(_report_page_url_with_filters(checkin.session_id, filters))
 
 
 @login_required
@@ -267,13 +471,13 @@ def checkin_remap(request, pk: int):
 def checkin_manual(request, pk: int):
     """POST /sessions/<pk>/checkins/manual/ — create a manual check-in for a participant."""
     session = get_object_or_404(_accessible_sessions(request.user), pk=pk)
-    unique_only = request.POST.get("unique") == "1"
+    filters = _report_query_params(request.POST)
     face_id = request.POST.get("face_id")
     checked_in_at_str = request.POST.get("checked_in_at")
 
     if not face_id:
         messages.error(request, _("Please choose a participant."))
-        return redirect(_report_page_url(pk, unique_only))
+        return redirect(_report_page_url_with_filters(pk, filters))
 
     face = get_object_or_404(
         Face,
@@ -296,7 +500,7 @@ def checkin_manual(request, pk: int):
     CheckIn.objects.filter(pk=checkin.pk).update(checked_in_at=checked_in_at)
 
     messages.success(request, _('Manual check-in created for "%(name)s".') % {"name": face.name})
-    return redirect(_report_page_url(pk, unique_only))
+    return redirect(_report_page_url_with_filters(pk, filters))
 
 
 @login_required
@@ -304,10 +508,10 @@ def checkin_manual(request, pk: int):
 def checkin_delete(request, pk: int):
     """POST /sessions/checkins/<pk>/delete/ — delete a check-in from the report."""
     checkin = get_object_or_404(_accessible_checkins(request.user), pk=pk)
-    unique_only = request.POST.get("unique") == "1"
+    filters = _report_query_params(request.POST)
     session_id = checkin.session_id
     if checkin.raw_face_image:
         checkin.raw_face_image.delete(save=False)
     checkin.delete()
     messages.success(request, _("Check-in deleted."))
-    return redirect(_report_page_url(session_id, unique_only))
+    return redirect(_report_page_url_with_filters(session_id, filters))

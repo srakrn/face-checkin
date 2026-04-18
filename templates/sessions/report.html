@@ -6,6 +6,34 @@
 {% block extra_head %}
   {{ block.super }}
   <style>
+    .toolbar-card {
+      border: 1px solid var(--bs-border-color);
+      border-radius: 1rem;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+
+    .sort-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      color: inherit;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .sort-link:hover {
+      color: var(--bs-primary);
+    }
+
+    .sort-link-active {
+      color: var(--bs-primary);
+    }
+
+    .sort-indicator {
+      font-size: 0.8rem;
+      opacity: 0.75;
+    }
+
     @page {
       size: A4 portrait;
       margin: 12mm;
@@ -212,20 +240,66 @@
         {% if not face_options %}disabled{% endif %}
       >{% trans "Manual Check-in" %}</button>
       {% if unique_only %}
-        <a href="{% url 'sessions:report_csv' session.pk %}?unique=1" class="btn btn-primary btn-sm">
+        <a href="{% url 'sessions:report_csv' session.pk %}{% if report_csv_query %}?{{ report_csv_query }}{% endif %}" class="btn btn-primary btn-sm">
           {% trans "Download CSV" %}
         </a>
-        <a href="{% url 'sessions:report_page' session.pk %}" class="btn btn-outline-secondary btn-sm">
+        <a href="{% url 'sessions:report_page' session.pk %}{% if toggle_unique_query %}?{{ toggle_unique_query }}{% endif %}" class="btn btn-outline-secondary btn-sm">
           {% trans "Show All" %}
         </a>
       {% else %}
-        <a href="{% url 'sessions:report_csv' session.pk %}" class="btn btn-primary btn-sm">
+        <a href="{% url 'sessions:report_csv' session.pk %}{% if report_csv_query %}?{{ report_csv_query }}{% endif %}" class="btn btn-primary btn-sm">
           {% trans "Download CSV" %}
         </a>
-        <a href="{% url 'sessions:report_page' session.pk %}?unique=1" class="btn btn-outline-info btn-sm">
+        <a href="{% url 'sessions:report_page' session.pk %}{% if toggle_unique_query %}?{{ toggle_unique_query }}{% endif %}" class="btn btn-outline-info btn-sm">
           {% trans "Show Unique Only" %}
         </a>
       {% endif %}
+    </div>
+  </div>
+
+  <div class="card mb-4 report-screen-only toolbar-card shadow-sm">
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        {% if unique_only %}
+          <input type="hidden" name="unique" value="1">
+        {% endif %}
+        <div class="col-12 col-md-4">
+          <label for="reportSearch" class="form-label">{% trans "Search Participants" %}</label>
+          <input
+            type="search"
+            id="reportSearch"
+            name="q"
+            class="form-control"
+            value="{{ filters.q }}"
+            placeholder="{% trans 'Search by name or custom ID' %}"
+          >
+        </div>
+        <div class="col-12 col-sm-4 col-md-3">
+          <label for="reportMatched" class="form-label">{% trans "Match Status" %}</label>
+          <select id="reportMatched" name="matched" class="form-select">
+            <option value="all"{% if filters.matched == "all" %} selected{% endif %}>{% trans "All Check-ins" %}</option>
+            <option value="matched"{% if filters.matched == "matched" %} selected{% endif %}>{% trans "Matched Only" %}</option>
+            <option value="unmatched"{% if filters.matched == "unmatched" %} selected{% endif %}>{% trans "Unmatched Only" %}</option>
+          </select>
+        </div>
+        <div class="col-12 col-sm-4 col-md-2">
+          <label for="reportAnomaly" class="form-label">{% trans "Anomaly" %}</label>
+          <select id="reportAnomaly" name="anomaly" class="form-select">
+            <option value="all"{% if filters.anomaly == "all" %} selected{% endif %}>{% trans "All" %}</option>
+            <option value="suspicious_only"{% if filters.anomaly == "suspicious_only" %} selected{% endif %}>{% trans "Suspicious Only" %}</option>
+            <option value="normal_only"{% if filters.anomaly == "normal_only" %} selected{% endif %}>{% trans "Normal Only" %}</option>
+          </select>
+        </div>
+        {% if filters.sort != "default" %}
+          <input type="hidden" name="sort" value="{{ filters.sort }}">
+        {% endif %}
+        <div class="col-12 col-sm-4 col-md-3 d-flex gap-2 flex-wrap">
+          <button type="submit" class="btn btn-primary btn-sm">{% trans "Apply" %}</button>
+          <a href="{% url 'sessions:report_page' session.pk %}{% if reset_report_query %}?{{ reset_report_query }}{% endif %}" class="btn btn-outline-secondary btn-sm">
+            {% trans "Reset" %}
+          </a>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -306,10 +380,25 @@
             <tr>
               <th>#</th>
               <th>{% trans "Face Image" %}</th>
-              <th>{% trans "Name" %}</th>
-              <th>{% trans "Custom ID" %}</th>
+              <th>
+                <a
+                  href="{% url 'sessions:report_page' session.pk %}{% if report_sort_links.name.query %}?{{ report_sort_links.name.query }}{% endif %}"
+                  class="sort-link{% if report_sort_links.name.active %} sort-link-active{% endif %}"
+                >
+                  <span>{% trans "Name" %}</span>
+                  <span class="sort-indicator" aria-hidden="true">{{ report_sort_links.name.indicator }}</span>
+                </a>
+              </th>
               <th>{% trans "Status" %}</th>
-              <th>{% trans "Check-in Time" %}</th>
+              <th>
+                <a
+                  href="{% url 'sessions:report_page' session.pk %}{% if report_sort_links.time.query %}?{{ report_sort_links.time.query }}{% endif %}"
+                  class="sort-link{% if report_sort_links.time.active %} sort-link-active{% endif %}"
+                >
+                  <span>{% trans "Check-in Time" %}</span>
+                  <span class="sort-indicator" aria-hidden="true">{{ report_sort_links.time.indicator }}</span>
+                </a>
+              </th>
               <th>{% trans "IP" %}</th>
               <th class="report-screen-only">{% trans "Actions" %}</th>
             </tr>
@@ -331,16 +420,9 @@
                 </td>
                 <td>
                   {% if checkin.face %}
-                    {{ checkin.face.name }}
+                    {{ checkin.face.name }}{% if checkin.face.custom_id %} ({{ checkin.face.custom_id }}){% endif %}
                   {% else %}
                     <span class="text-muted">{% trans "Unknown" %}</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if checkin.face and checkin.face.custom_id %}
-                    <code>{{ checkin.face.custom_id }}</code>
-                  {% else %}
-                    <span class="text-muted">—</span>
                   {% endif %}
                 </td>
                 <td>
@@ -372,9 +454,11 @@
 
                       <form method="post" action="{% url 'sessions:checkin_delete' checkin.pk %}" onsubmit="return confirm('{% trans "Delete this check-in?" %}');">
                         {% csrf_token %}
-                        {% if unique_only %}
-                          <input type="hidden" name="unique" value="1">
-                        {% endif %}
+                        {% for key, value in report_action_params.items %}
+                          {% if value %}
+                            <input type="hidden" name="{{ key }}" value="{{ value }}">
+                          {% endif %}
+                        {% endfor %}
                         <button
                           type="submit"
                           class="btn btn-outline-danger btn-sm"
@@ -390,9 +474,11 @@
                       <div class="modal-content">
                         <form method="post" action="{% url 'sessions:checkin_remap' checkin.pk %}">
                           {% csrf_token %}
-                          {% if unique_only %}
-                            <input type="hidden" name="unique" value="1">
-                          {% endif %}
+                          {% for key, value in report_action_params.items %}
+                            {% if value %}
+                              <input type="hidden" name="{{ key }}" value="{{ value }}">
+                            {% endif %}
+                          {% endfor %}
                           <div class="modal-header">
                             <h3 class="modal-title h5" id="remapCheckinModalLabel{{ checkin.pk }}">{% trans "Remap Check-in" %}</h3>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
@@ -425,7 +511,13 @@
       </div>
     {% else %}
       <div class="card-body text-center text-muted py-5">
-        <p class="mb-0">{% trans "No check-ins yet" %}</p>
+        <p class="mb-0">
+          {% if has_active_filters %}
+            {% trans "No check-ins match these filters." %}
+          {% else %}
+            {% trans "No check-ins yet" %}
+          {% endif %}
+        </p>
       </div>
     {% endif %}
   </div>
@@ -440,9 +532,11 @@
       <div class="modal-content">
         <form method="post" action="{% url 'sessions:checkin_manual' session.pk %}">
           {% csrf_token %}
-          {% if unique_only %}
-            <input type="hidden" name="unique" value="1">
-          {% endif %}
+          {% for key, value in report_action_params.items %}
+            {% if value %}
+              <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+          {% endfor %}
           <div class="modal-header">
             <h3 class="modal-title h5" id="manualCheckinModalLabel">{% trans "Manual Check-in" %}</h3>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
